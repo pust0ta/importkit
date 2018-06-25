@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="2535b34e-d56c-470a-b8d4-24e55ffebad5" name="Default" comment="" />
+    <list default="true" id="2535b34e-d56c-470a-b8d4-24e55ffebad5" name="Default" comment="">
+      <change beforePath="$PROJECT_DIR$/api/importkit_api.module" beforeDir="false" afterPath="$PROJECT_DIR$/api/importkit_api.module" afterDir="false" />
+    </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="TRACKING_ENABLED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -13,7 +15,21 @@
     <drupalPath>$PROJECT_DIR$/../../../..</drupalPath>
   </component>
   <component name="FileEditorManager">
-    <leaf SIDE_TABS_SIZE_LIMIT_KEY="300" />
+    <leaf>
+      <file leaf-file-name="importkit_api.module" pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/api/importkit_api.module">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="168">
+              <caret line="150" lean-forward="true" selection-start-line="150" selection-end-line="150" />
+              <folding>
+                <element signature="e#126#5162#0#PHP" />
+                <element signature="n#importkit_api_importkit_product#0;n#!!top" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+    </leaf>
   </component>
   <component name="FindInProjectRecents">
     <findStrings>
@@ -24,15 +40,18 @@
       <find>guid2</find>
     </findStrings>
   </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
   <component name="IdeDocumentHistory">
     <option name="CHANGED_PATHS">
       <list>
         <option value="$PROJECT_DIR$/importkit.module" />
-        <option value="$PROJECT_DIR$/api/importkit_api.module" />
         <option value="$PROJECT_DIR$/modules/cml_store_stock/listners/ImportkitListenerStock.php" />
         <option value="$PROJECT_DIR$/modules/cml_store_stock/listners/ImportkitListnerStock.php" />
         <option value="$PROJECT_DIR$/modules/cml_store_stock/cml_store_stock.install" />
         <option value="$PROJECT_DIR$/modules/cml_store_content/cml_store_content.module" />
+        <option value="$PROJECT_DIR$/api/importkit_api.module" />
       </list>
     </option>
   </component>
@@ -236,6 +255,15 @@
           <expand>
             <path>
               <item name="importkit" type="b2602c69:ProjectViewProjectNode" />
+              <item name="importkit" type="2a2b976b:PhpTreeStructureProvider$1" />
+            </path>
+            <path>
+              <item name="importkit" type="b2602c69:ProjectViewProjectNode" />
+              <item name="importkit" type="2a2b976b:PhpTreeStructureProvider$1" />
+              <item name="api" type="2a2b976b:PhpTreeStructureProvider$1" />
+            </path>
+            <path>
+              <item name="importkit" type="b2602c69:ProjectViewProjectNode" />
               <item name="External Libraries" type="bcb0276e:PhpExternalLibrariesNodePatcher$PatchedExternalLibrariesNode" />
             </path>
           </expand>
@@ -276,21 +304,23 @@
       <workItem from="1529509285166" duration="3148000" />
       <workItem from="1529673826586" duration="10000" />
       <workItem from="1529735532388" duration="14602000" />
+      <workItem from="1529954316734" duration="29000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="20276000" />
+    <option name="totallyTimeSpent" value="20305000" />
   </component>
   <component name="ToolWindowManager">
     <frame x="152" y="0" width="1528" height="1050" extended-state="6" />
+    <editor active="true" />
     <layout>
       <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.25" />
       <window_info anchor="bottom" id="TODO" order="6" />
       <window_info anchor="bottom" id="Event Log" order="7" sideWeight="0.50065446" side_tool="true" weight="0.399361" />
       <window_info anchor="right" id="Database" order="3" />
       <window_info anchor="bottom" id="Database Changes" order="7" show_stripe_button="false" />
-      <window_info anchor="bottom" id="Version Control" order="7" show_stripe_button="false" />
+      <window_info anchor="bottom" id="Version Control" order="7" />
       <window_info anchor="bottom" id="Run" order="2" />
       <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
       <window_info anchor="bottom" id="Terminal" order="7" />
@@ -415,8 +445,12 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/api/importkit_api.module">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="83">
-          <caret line="172" column="33" selection-start-line="172" selection-start-column="9" selection-end-line="172" selection-end-column="38" />
+        <state relative-caret-position="168">
+          <caret line="150" lean-forward="true" selection-start-line="150" selection-end-line="150" />
+          <folding>
+            <element signature="e#126#5162#0#PHP" />
+            <element signature="n#importkit_api_importkit_product#0;n#!!top" />
+          </folding>
         </state>
       </provider>
     </entry>

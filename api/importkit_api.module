@@ -5,7 +5,7 @@ function importkit_api_importkit_term_save($catalog_vid, $xml_element)
     // Do something
     // $catalog_vid = 1
 }
-
+/*
 function importkit_api_importkit_node($op, $node, $xml_element)
 {
     $tablets = array(
@@ -147,7 +147,7 @@ function importkit_api_importkit_product($op, $product, $xml_element)
 
             break;
     }
-}
+}*/
 
 function importkit_api_importkit_stock($entity, $xml_element){
   foreach($xml_element->Остатки->ОстаткиСклада as $element) {

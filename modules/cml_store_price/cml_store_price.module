@@ -1,0 +1,291 @@
+<?php
+
+function cml_store_price_importkit_call_backs()
+{
+    return array(
+      'price_batch' => 'cml_store_price_batch',
+      'prices' => 'cml_store_price_get_price',
+      'Предложения' => 'cml_store_content_parse_offers',
+    );
+}
+
+function cml_store_price_importkit_info()
+{
+    $path = drupal_get_path('module', 'cml_store_price') . '/listners';
+
+    return array(
+      'ImportkitListnerPrice' => $path . '/ImportkitListnerPrice',
+    );
+}
+
+function cml_store_price_batch($argument, $options, &$context)
+{
+    // bd72d910-55bc-11d9-848a-00112f43529a
+    // bd72d910-55bc-11d9-848a-00112f43529a#1a63e25d-52e6-11e0-9ecf-005056c00008
+    $content = cache_get($argument);
+    if ($content) {
+        $result = false;
+        $element = simplexml_load_string(trim($content->data));
+
+        @list($guid1, $guid2) = explode('#', (string) $element->Ид);
+        if (!$guid2) {
+            $guid2 = '';
+        }
+
+        // Проверяем наличие
+        $item = db_query("SELECT pid, nid FROM {importkit_cml_offers}
+			WHERE guid1 = :guid1 AND guid2 = :guid2 LIMIT 1", array(
+            ':guid1' => $guid1,
+            ':guid2' => $guid2
+          ))->fetchObject();
+
+        if (!$item) {
+            return;
+        }
+
+        $product_title = (string) $element->Наименование;
+
+        switch (variable_get('importkit_content_module_use', 'ubercart')) {
+            case 'ubercart':
+                $node = node_load($item->nid);
+                if (!$node) {
+                    return false;
+                }
+                $node->guid1 = $guid1;
+                $node->guid2 = $guid2;
+                $node->operation = 'update-price';
+                cml_store_price_ubercart_update_price($node, $element, false);
+                $result = node_save($node);
+
+                $context['message'] .= t('Update price in @type nid: @nid "@title".<br>', array(
+                    '@nid' => $node->nid,
+                    '@type' => $node->type,
+                    '@title' => $product_title,
+                  ));
+                break;
+
+            case 'commerce':
+                $product = commerce_product_load($item->pid);
+                if (!$product) {
+                    return false;
+                }
+                $product->guid1 = $guid1;
+                $product->guid2 = $guid2;
+                $product->nid = $item->nid;
+                $product->operation = 'update-price';
+                cml_store_price_commerce_update_price($product, $element, false);
+                $result = commerce_product_save($product);
+
+                $context['message'] .= t('Update price in @type pid: @pid "@title".<br>', array(
+                    '@pid' => $product->product_id,
+                    '@type' => $product->type,
+                    '@title' => $product_title,
+                  ));
+                break;
+        }
+
+
+        return $result;
+    }
+
+    $context['message'] .= t('<b style="color:red">The cache guid: @guid1#@guid2 is empty in the "cml_store_price"</b><br>', array(
+        '@guid1' => $argument->guid1,
+        '@guid2' => $argument->guid2
+      ));
+
+    return false;
+}
+
+function cml_store_price_ubercart_update_price(
+  &$node,
+  $element,
+  $use_attributes = false
+) {
+    $retail_guid = variable_get('importkit_product_retail_price', '');
+    $wholesale_guid = variable_get('importer_wholesale_price', '');
+
+    foreach ($element->Цены->Цена as $price_data) {
+
+        if ($retail_guid == (string) $price_data->ИдТипаЦены) {
+            // Retail price
+            $retail_price = (string) $price_data->ЦенаЗаЕдиницу;
+            $retail_price = str_replace(',', '.', $retail_price);
+        }
+        if ($wholesale_guid == (string) $price_data->ИдТипаЦены) {
+            // Wholesale price
+            $wholesale_price = (string) $price_data->ЦенаЗаЕдиницу;
+            $wholesale_price = str_replace(',', '.', $wholesale_price);
+        }
+    }
+
+    if (isset($retail_price)) {
+        // Price
+        if (variable_get('cml_offers_altered_price', false)) {
+            $price_context = array(
+              'revision' => 'altered',
+              'type' => 'product',
+              'class' => array(
+                'product',
+              ),
+              'subject' => array(
+                'node' => $node,
+              ),
+            );
+            $options = array('label' => false);
+            $node->sell_price = uc_price($retail_price, $price_context, $options);
+        } else {
+            $node->sell_price = $retail_price;
+
+            /*if(isset($product->combination)){
+
+                $combination = serialize($product->combination);
+
+                $adjustments = array(
+                    'nid' => $product->nid,
+                    'combination' => $combination,
+                    'price' => $product->sell_price,
+                );
+
+                if(!(db_query('SELECT price FROM {cml_offers_adjustments} WHERE nid = :nid AND combination = :combination',
+                    array(
+                        ':nid' => $product->nid,
+                        ':combination' => $combination,
+                    )
+                    )->fetchField()))
+                 drupal_write_record('cml_offers_adjustments', $adjustments);
+                else
+                 drupal_write_record('cml_offers_adjustments', $adjustments, array('combination'));
+
+            }*/
+
+        }
+    }
+
+    return true;
+}
+
+function cml_store_price_commerce_update_price(
+  $product,
+  $element,
+  $use_attributes = false
+) {
+    $form_state = array();
+    $form_state['values'] = array();
+    $form = array();
+    $form['#parents'] = array();
+    // Получаем цену
+    $price = 0;
+
+    $retail_guid = variable_get('importkit_product_retail_price', '');
+
+    if ($retail_guid) {
+        foreach ($element->Цены->Цена as $_price) {
+            if ($_price->ИдТипаЦены == $retail_guid) {
+                $price = (string) $_price->ЦенаЗаЕдиницу;
+                $price = str_replace(',', '.', $price);
+                $price *= variable_get('importkit_product_retail_price_rate', 1);
+                break;
+            }
+        }
+    }
+    // Устанавливаем цену
+    $price = array(
+      LANGUAGE_NONE => array(
+        0 => array(
+          'amount' => $price,
+          'currency_code' => commerce_default_currency(),
+        )
+      )
+    );
+    $form_state['values']['commerce_price'] = $price;
+
+    // Notify field widgets to save their field data
+    field_attach_submit('commerce_product', $product, $form, $form_state);
+}
+
+function cml_store_price_get_price()
+{
+    return db_query("SELECT COUNT(pid) FROM {importkit_cml_price}")->fetchField();
+}
+
+function cml_store_price_node_update($node)
+{
+    if ($node->type == variable_get('importkit_content_node_type', 'product') && isset($node->guid2) && (isset($node->operation) && $node->operation == 'update-price')) {
+
+        db_merge('importkit_cml_price')->key(array(
+            'guid1' => $node->guid1,
+            'guid2' => $node->guid2,
+          ))->fields(array(
+            'guid1' => $node->guid1,
+            'guid2' => $node->guid2,
+            'pid' => $node->vid,
+            'nid' => $node->nid,
+            'price' => $node->sell_price,
+          ))->execute();
+    }
+}
+
+function cml_store_price_node_delete($node)
+{
+    if (!cml_store_content_is_product($node)) {
+        return;
+    }
+
+    db_delete('importkit_cml_price')->condition('nid', $node->nid)->execute();
+}
+
+function cml_store_price_entity_update($entity, $entityType)
+{
+    if ($entityType == 'commerce_product' && isset($entity->guid2) && (isset($entity->operation) && $entity->operation == 'update-price')) {
+
+        db_merge('importkit_cml_price')->key(array(
+            'guid1' => $entity->guid1,
+            'guid2' => $entity->guid2,
+            'nid' => $entity->nid,
+          ))->fields(array(
+            'guid1' => $entity->guid1,
+            'guid2' => $entity->guid2,
+            'pid' => $entity->product_id,
+            'nid' => $entity->nid,
+            'price' => importkit_get_field($entity, 'commerce_price', 0, "amount"),
+          ))->execute();
+
+    }
+}
+
+function cml_store_price_entity_delete($entity, $entityType)
+{
+    if ($entityType == 'commerce_product') {
+        db_delete('importkit_cml_price')->condition('pid', $entity->product_id)->execute();
+    }
+}
+
+function cml_store_price_uc_product_alter(&$node)
+{
+
+    if (isset($node->data['attributes'])) {
+        $combination = array();
+        foreach ($node->data['attributes'] as $aid => $value) {
+            if (is_numeric($value)) {
+                $attribute = uc_attribute_load($aid, $node->nid, 'product');
+                if ($attribute && ($attribute->display == 1 || $attribute->display == 2)) {
+                    $combination[$aid] = $value;
+                }
+            }
+        }
+
+        if (count($combination)) {
+            ksort($combination);
+            $query = db_select('importkit_cml_offers', 'o');
+            $query->leftJoin('importkit_cml_price', 'p', "p.guid1 = o.guid1 AND p.guid2 = o.guid2");
+            $query->fields('p', array('price'))->condition('o.nid', $node->nid)->condition('o.uc_combination', serialize($combination));
+            $node->price = $query->execute()->fetchField();
+        }
+    } else {
+        $query = db_select('importkit_cml_offers', 'o');
+        $query->leftJoin('importkit_cml_price', 'p', "p.guid1 = o.guid1 AND p.guid2 = o.guid2");
+        $query->fields('p', array('price'))->condition('o.nid', $node->nid);
+        $node->price = $query->execute()->fetchField();
+    }
+
+}

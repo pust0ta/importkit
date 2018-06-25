@@ -1,0 +1,10 @@
+name = Store category from CML
+description = Store category from CML
+package = "Import KIT"
+
+dependencies[] = importkit
+dependencies[] = taxonomy
+
+version = "7.x-0.10-dev"
+core = "7.x"
+

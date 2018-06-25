@@ -1,0 +1,76 @@
+<?php
+// $Id $
+
+// bd72d913-55bc-11d9-848a-00112f43529a#dee6e177-55bc-11d9-848a-00112f43529a
+function cml_store_stock_schema()
+{
+
+    $schema['importkit_cml_stock'] = array(
+      'description' => 'Stores cml and associated data with node.',
+      'fields' => array(
+        'guid1' => array(
+          'description' => 'bd72d913-55bc-11d9-848a-00112f43529a#',
+          'type' => 'varchar',
+          'length' => 37,
+          // 36 * 2 # - разделяет подвид товара (зеленый, красный)
+          'not null' => true,
+          'default' => 0,
+        ),
+        'guid2' => array(
+          'description' => '#bd72d913-55bc-11d9-848a-00112f43529a',
+          'type' => 'varchar',
+          'length' => 37,
+          // 36 * 2 # - разделяет подвид товара (зеленый, красный)
+          'not null' => true,
+          'default' => 0,
+        ),
+        'pid' => array(
+          'description' => t('Product id.'),
+          'type' => 'int',
+          'length' => 11,
+          'not null' => true,
+          'default' => 0,
+        ),
+        'nid' => array(
+          'description' => t('Node id.'),
+          'type' => 'int',
+          'length' => 11,
+          'not null' => true,
+          'default' => 0,
+        ),
+        'stock' => array(
+          'description' => 'Amount products in the warehouse.',
+          'type' => 'float',
+          'size' => 'big',
+          'not null' => true
+        ),
+        'warehouse' => array(
+          'description' => 'Warehouse.',
+          'type' => 'varchar',
+          'length' => 50,
+          'not null' => true,
+          'default' => '',
+        ),
+      ),
+      'primary key' => array('guid1', 'guid2', 'warehouse'),
+      'indexes' => array(
+        'product' => array('pid', 'nid'),
+        'guid' => array('guid1', 'guid2')
+      ),
+    );
+
+    return $schema;
+}
+
+function cml_store_stock_update_7000()
+{
+    $schema = cml_store_stock_schema();
+    db_add_field('importkit_cml_stock', 'stock', $schema['importkit_cml_stock']['fields']['stock']);
+    db_add_field('importkit_cml_stock', 'warehouse', $schema['importkit_cml_stock']['fields']['warehouse']);
+}
+
+function cml_store_stock_update_7001()
+{
+    db_drop_primary_key('importkit_cml_stock');
+    db_add_primary_key('importkit_cml_stock', array('guid1', 'guid2', 'warehouse'));
+}

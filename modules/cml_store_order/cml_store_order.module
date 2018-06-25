@@ -1,0 +1,397 @@
+<?php
+
+function cml_store_order_importkit_info()
+{
+    $path = drupal_get_path('module', 'cml_store_order') . '/listners';
+
+    return array(
+      'ImportkitListnerOrder' => $path . '/ImportkitListnerOrder',
+    );
+}
+
+/**
+ * Сoздание заявки по хуку
+ *
+ * @param mixed $op
+ * @param mixed $orders
+ */
+function cml_store_order_create_orders($params)
+{
+    global $user;
+
+    extract($params);
+
+    // создание файла ордера
+    $timechange = time();
+    $no_spaces = '<?xml version="1.0" encoding="windows-1251"?>
+	<КоммерческаяИнформация ВерсияСхемы="2.05"
+		ДатаФормирования="' . date('Y-m-d', $timechange) . 'T' . date('H:m:s', $timechange) . '"
+		ФорматДаты="ДФ=yyyy-MM-dd; ДЛФ=DT"
+		ФорматВремени="ДФ=ЧЧ:мм:сс; ДЛФ=T"
+		РазделительДатаВремя="T"
+		ФорматСуммы="ЧЦ=18; ЧДЦ=2; ЧРД=."
+		ФорматКоличества="ЧЦ=18; ЧДЦ=2; ЧРД=.">
+	</КоммерческаяИнформация>';
+
+    $xml = @new SimpleXMLElement (importkit_convert('utf-8', 'windows-1251', $no_spaces));
+
+    if (!is_object($xml)) {
+        return; // TODO:// написать ругательство
+    }
+
+    $doc = $xml->addChild("Документ");
+
+    // Шапка
+    $doc->addChild("Ид", $order_id);
+    $doc->addChild("Номер", $order_id);
+    $doc->addChild("Дата", date('Y-m-d', $created));
+    $doc->addChild("ХозОперация", "Заказ товара");
+    $doc->addChild("Роль", "Продавец");
+    $doc->addChild("Валюта", variable_get('importkit_order_curency', 'руб.'));
+    $doc->addChild("Курс", 1);
+    $doc->addChild("Сумма", $order_total);
+
+    // Контрагенты
+    $k = $doc->addChild('Контрагенты');
+    $_k = $k->addChild('Контрагент');
+
+    $accaunt = user_load($order->uid);
+
+    $_k->addChild("Ид", "{$accaunt->uid}#{$accaunt->name}#");
+
+    $FIO = $last_name . " " . $first_name . " " . $patronymic_name;
+    if (!trim($FIO)) {
+        $FIO = $accaunt->name;
+    }
+    $_k->addChild("Наименование", $FIO);
+    $_k->addChild("Роль", 'Покупатель');
+    $_k->addChild("ПолноеНаименование", $FIO);
+    $_k->addChild("Фамилия", $last_name);
+    $_k->addChild("Имя", $first_name);
+
+    $_k1 = $_k->addChild('АдресРегистрации');
+    $_k2 = $_k1->addChild('Представление', $street1 . ' ' . $street2);
+    $_k2 = $_k1->addChild('АдресноеПоле');
+    $_k2->addChild('Тип', 'Почтовый индекс');
+    $_k2->addChild('Значение', $postal_code);
+    $_k2 = $_k1->addChild('АдресноеПоле');
+    $_k2->addChild('Тип', 'Страна');
+    $_k2->addChild('Значение', '');
+    $_k2 = $_k1->addChild('АдресноеПоле');
+    $_k2->addChild('Тип', 'Город');
+    $_k2->addChild('Значение', $city);
+
+    $_k1 = $_k->addChild('Контакты');
+    $_k2 = $_k1->addChild('Контакт');
+    $_k2->addChild('Тип', 'Почта');
+    $_k2->addChild('Значение', $email);
+    $_k2 = $_k1->addChild('Контакт');
+    $_k2->addChild('Тип', 'Телефон');
+    $_k2->addChild('Значение', $phone);
+
+    $_k1 = $_k->addChild("Имя", $first_name);
+    $_k1 = $_k->addChild("Фамилия", $last_name);
+    $_k1 = $_k->addChild("Роль", "Покупатель");
+
+    $doc->addChild("Время", date('H:m:s', $created));
+
+    // Комментарий
+    if (isset($comments)) {
+        $doc->addChild("Комментарий", $comments);
+    }
+
+    $t1 = $doc->addChild('Товары');
+
+    foreach ($products as $product) {
+        // Доставка товара
+        $t1_1 = $t1->addChild('Товар');
+
+        $product_guid = $product->guid;
+
+        $t1_2 = $t1_1->addChild("Ид", (isset($product_guid) ? $product_guid : 'ORDER_DELIVERY'));
+
+        if (isset($product->model)) {
+            $t1_2 = $t1_1->addChild("ИдКаталога", $product->model);
+        }
+
+        $t1_2 = $t1_1->addChild("Наименование", $product->title);
+        $t1_2 = $t1_1->addChild("ЦенаЗаЕдиницу", (double) $product->price);
+        $t1_2 = $t1_1->addChild("Количество", $product->qty);
+
+        $total = (double) ($product->qty * (double) $product->price) / variable_get('importkit_product_retail_price_rate', 1);
+
+        $t1_2 = $t1_1->addChild("Сумма", $total);
+
+        // Необязательные поля
+        $t1_2 = $t1_1->addChild("ЗначенияРеквизитов");
+
+        $t1_3 = $t1_2->addChild('ЗначениеРеквизита');
+        $_k4 = $t1_3->addChild('Наименование', 'ВидНоменклатуры');
+        $_k4 = $t1_3->addChild('Значение', 'Товар');
+
+        $t1_3 = $t1_2->addChild('ЗначениеРеквизита');
+        $_k4 = $t1_3->addChild('Наименование', 'ТипНоменклатуры');
+        $_k4 = $t1_3->addChild('Значение', 'Товар');
+    }
+
+    $t1 = $doc->addChild('ЗначенияРеквизитов');
+
+    // Статус платежа
+    if ($payment_method) {
+        $t2 = $t1->addChild('ЗначениеРеквизита');
+        $t2->addChild('Наименование', 'Дата оплаты');
+        $t2->addChild('Значение', date('Y-m-d h:i:s', $payment_received)); //2011-09-04 07:32:15
+
+        $t2 = $t1->addChild('ЗначениеРеквизита');
+        $t2->addChild('Наименование', 'Номер платежного документа');
+        $t2->addChild('Значение', $payment_receipt_id);
+
+        $t2 = $t1->addChild('ЗначениеРеквизита');
+        $t2->addChild('Наименование', 'Метод оплаты');
+        $t2->addChild('Значение', $payment_method);
+    }
+
+    // Доставка
+    if ($shipping) {
+        $t2 = $t1->addChild('ЗначениеРеквизита');
+        $t2->addChild('Наименование', 'Доставка разрешена');
+        $t2->addChild('Значение', 'true');
+
+        $t2 = $t1->addChild('ЗначениеРеквизита');
+        $t2->addChild('Наименование', 'Способ доставки');
+        $t2->addChild('Значение', $shipping['title']);
+    }
+
+    $t2 = $t1->addChild('ЗначениеРеквизита');
+    $t2->addChild('Наименование', 'Отменен');
+    $t2->addChild('Значение', 'false');
+
+    $t2 = $t1->addChild('ЗначениеРеквизита');
+    $t2->addChild('Наименование', 'Финальный статус');
+    $t2->addChild('Значение', 'false');
+
+    $t2 = $t1->addChild('ЗначениеРеквизита');
+    $t2->addChild('Наименование', 'Статус заказа');
+    $t2->addChild('Значение', variable_get('importkit_order_status', 'Готов к отгрузке'));
+
+
+    $t2 = $t1->addChild('ЗначениеРеквизита');
+    $t2->addChild('Наименование', 'Дата изменения статуса');
+    $t2->addChild('Значение', date('Y-m-d h:i:s', time()));
+
+    $t2 = $t1->addChild('ЗначениеРеквизита');
+    $t2->addChild('Наименование', 'Сайт');
+    $t2->addChild('Значение', 'ImportKit');
+
+    $body = $xml->asXML();
+
+    unset($xml);
+
+    $path = variable_get('importkit_data_path', '');
+
+    $order_file = $path . '/order_' . $order_id . '.xml';
+
+    $handle = fopen($order_file, 'w');
+    fwrite($handle, $body);
+    fclose($handle);
+
+    chmod($order_file, octdec(variable_get('importkit_order_file_chmod', '0664')));
+
+    return true;
+}
+
+// Ubercart
+
+/**
+ * Create order from Ubercart
+ */
+/**
+ * Implementation of hook_uc_order().
+ *
+ * @param mixed $op
+ * @param mixed $order
+ * @param mixed $edit
+ */
+function cml_store_order_uc_order($op, $order, $edit = array())
+{
+    if ($op == 'presave') {
+        foreach ($order->products as $product) {
+            if (!empty($product->data['attributes'])) {
+                if (!isset($product->data['combination'])) {
+                    $product->data['combination'] = $product->data['attributes'];
+                }
+            }
+        }
+    }
+    if ($op == 'save' || $op == 'update') {  // update , total
+        if ($order->order_status == variable_get('cml_store_order_state', 'pending')) {
+
+            if (variable_get('cml_store_order_user_info', 0) == 0) {
+                $last_name = $order->billing_last_name;
+                $first_name = $order->billing_first_name;
+                //$middle_name = $order->billing_middle_name;
+                $postal_code = $order->billing_postal_code;
+                $city = $order->billing_city;
+                $country = (int) $order->billing_country;
+                $street1 = $order->billing_street1;
+                $street2 = $order->billing_street2;
+            } else {
+                $last_name = $order->delivery_last_name;
+                $first_name = $order->delivery_first_name;
+                //$middle_name = $order->delivery_middle_name;
+                $postal_code = $order->delivery_postal_code;
+                $city = $order->delivery_city;
+                $country = (int) $order->delivery_country;
+                $street1 = $order->delivery_street1;
+                $street2 = $order->delivery_street2;
+            }
+
+            $comments = uc_order_comments_load($order->order_id);
+            foreach ($comments as $comment) {
+                $_comments[] = $comment->message;
+            }
+
+            $payment_received = '';
+            $payment_receipt_id = '';
+            $payment_method = '';
+
+            if (module_exists('uc_payment')) {
+                $payment = uc_payment_load_payments($order->order_id);
+                if ($payment && is_array($payment) && count($payment)) {
+                    $payment_received = $payment[0]->received;
+                    $payment_receipt_id = $payment[0]->receipt_id;
+                    $payment_method = $payment[0]->method;
+                }
+            }
+
+            // Доставка товара
+            $shipping = array();
+            if ($order->line_items && is_array($order->line_items) && count($order->line_items)) {
+                $is_shipping = false;
+                foreach ($order->line_items as $line_item) {
+                    if ($line_item['type'] == 'shipping') {
+                        $shipping = $line_item;
+                        break;
+                    }
+                }
+                if ($shipping) {
+                    $product = (object) array(
+                      'title' => $shipping['title'],
+                      'price' => $shipping['amount'],
+                      'qty' => 1
+                    );
+                    array_unshift($order->products, $product);
+                }
+            }
+
+            $products = array();
+
+            foreach ($order->products as $pid => $product) {
+                $product->guid = cml_store_content_get_guid($product);
+                $products[$pid] = $product;
+            }
+
+            // Подготовка данных к занесению
+            $params = array(
+              'order' => $order,
+              'order_id' => $order->order_id,
+              'created' => $order->created,
+              'order_total' => $order->order_total,
+              'last_name' => $last_name,
+              'first_name' => $first_name,
+              'patronymic_name' => '',
+              'postal_code' => $postal_code,
+              'city' => $city,
+              'country' => $country,
+              'street1' => $street1,
+              'street2' => $street2,
+              'email' => $order->primary_email,
+              'comments' => isset($_comments) ? implode(', ', $_comments) : '',
+              'payment_received' => $payment_received,
+              'payment_receipt_id' => $payment_receipt_id,
+              'payment_method' => $payment_method,
+              'shipping' => $shipping,
+              'phone' => '',
+              'products' => $products,
+
+            );
+
+            return cml_store_order_create_orders($params);
+        }
+    }
+}
+
+function cml_store_order_uc_checkout_complete($order, $account)
+{
+    return cml_store_order_uc_order('save', $order);
+}
+
+// Commerce
+
+function cml_store_order_commerce_order_presave($order)
+{
+    if ($order->status == variable_get('importkit_order_state', 'completed')) {
+
+        $products = array();
+
+        foreach ($order->commerce_line_items[LANGUAGE_NONE] as $commerce_line_item) {
+            $line_item = commerce_line_item_load($commerce_line_item['line_item_id']);
+
+            $product_id = importkit_get_field($line_item, 'commerce_product', 0, "product_id");
+
+            if (!$product_id) {
+                continue;
+            }
+
+            $product_entity = commerce_product_load($product_id);
+            $product = new stdClass();
+            $product->pid = $product_entity->product_id;
+            $product->guid = cml_store_content_get_guid($product_entity);
+            $product->model = $product_entity->sku; // sku
+            $product->title = $product_entity->title;
+            $product->price = importkit_get_field($product_entity, 'commerce_price', 0, "amount");
+            $product->qty = $line_item->quantity;
+            $products[] = $product;
+
+        }
+
+        // Подгрузка полей профиля
+        $profile_id = importkit_get_field($order, 'commerce_customer_shipping', 0, "profile_id");
+        $profile = commerce_customer_profile_load($profile_id);
+
+        $comments = '';
+
+        // Заполняем всеми полями
+        /*foreach($profile as $field_name => $field){
+                $comments .= importkit_get_field($profile, $field_name) . "\n";
+        }*/
+
+        $email = importkit_get_field($profile, 'field_client_email');
+
+        // Подготовка данных к занесению
+        $params = array(
+          'order' => $order,
+          'order_id' => $order->order_number,
+          'created' => $order->created,
+          'order_total' => importkit_get_field($order, 'commerce_order_total', 0, "amount"),
+          'last_name' => importkit_get_field($profile, 'field_last_name'),
+          'first_name' => importkit_get_field($profile, 'field_first_name'),
+          'patronymic_name' => importkit_get_field($profile, 'field_patronymic_name'),
+          'postal_code' => importkit_get_field($profile, 'field_post_index'),
+          'city' => importkit_get_field($profile, 'field_client_city'),
+          'country' => importkit_get_field($profile, 'field_country'),
+          'street1' => importkit_get_field($profile, 'field_client_delivery_address'),
+          'street2' => '',
+          'email' => ($email ? $email : $order->mail),
+          'phone' => importkit_get_field($profile, 'field_client_phone'),
+          'comments' => $comments,
+          'payment_received' => '',
+          'payment_receipt_id' => '',
+          'payment_method' => '',
+          'shipping' => '',
+          'products' => $products,
+        );
+
+        return cml_store_order_create_orders($params);
+    }
+}

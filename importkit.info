@@ -1,0 +1,8 @@
+name = Import KIT
+description = The special assistant module for batch, schedule and cron processing
+package = "Import KIT"
+
+configure = admin/importkit/settings
+version = "7.x-0.10-dev"
+core = "7.x"
+

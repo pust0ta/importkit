@@ -1,0 +1,36 @@
+<?php
+// $Id $
+
+// bd72d913-55bc-11d9-848a-00112f43529a#dee6e177-55bc-11d9-848a-00112f43529a
+function cml_store_category_schema()
+{
+    $schema['importkit_cml_terms'] = array(
+      'description' => 'Stores cml and associated data with node.',
+      'fields' => array(
+        'guid' => array(
+          'description' => 'bd72d913-55bc-11d9-848a-00112f43529a#',
+          'type' => 'varchar',
+          'length' => 37,
+          // 36 * 2 # - разделяет подвид товара (зеленый, красный)
+          'not null' => true,
+          'default' => 0,
+        ),
+        'vid' => array(
+          'description' => t('Vocabulary id.'),
+          'type' => 'int',
+          'length' => 11,
+          'not null' => true,
+          'default' => 0,
+        ),
+        'tid' => array(
+          'type' => 'int',
+          'length' => 11,
+          'unsigned' => true,
+          'not null' => true,
+          'description' => 'Unique term ID.',
+        ),
+      ),
+    );
+
+    return $schema;
+}

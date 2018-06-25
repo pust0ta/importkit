@@ -1,0 +1,11 @@
+name = Store stock data from CML
+description = Store stock data from CML for (Ubercart 3/Commerce)
+package = "Import KIT"
+
+dependencies[] = importkit
+dependencies[] = cml_store_content
+dependencies[] = node
+
+version = "7.x-0.10-dev"
+core = "7.x"
+

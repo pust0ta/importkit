@@ -1,0 +1,6 @@
+name = Import KIT (API Example)
+description = The example API for Import KIT
+package = "Import KIT"
+
+version = "7.x-0.6-dev"
+core = "7.x"

@@ -1,0 +1,171 @@
+<?php
+
+function importkit_api_importkit_term_save($catalog_vid, $xml_element)
+{
+    // Do something
+    // $catalog_vid = 1
+}
+
+function importkit_api_importkit_node($op, $node, $xml_element)
+{
+    $tablets = array(
+      "63420a3e-8481-11e4-957c-0025902b8ec5",
+      "145713cf-a58e-11e2-b997-0025902b8ef1",
+      "ef0b58b7-a6d2-11e4-adee-0025902b8ec5",
+      "af312e24-ae99-11e4-adee-0025902b8ec5",
+      "0aaae90f-e23a-11e3-9383-0025902b8ec5",
+      "f7bf591a-be16-11e3-bf74-0025902b8ec5",
+      "145713d4-a58e-11e2-b997-0025902b8ef1",
+      "145713d8-a58e-11e2-b997-0025902b8ef1",
+      "145713dd-a58e-11e2-b997-0025902b8ef1",
+      "f8f5d997-4b79-11e2-bee3-0025902b8ef1",
+      "d5b3a011-5b27-11e3-910f-0025902b8ef1",
+      "359afbf0-e36c-11e4-9a04-0025902b8ec5"
+    ); // массив идентификаторов для планшетов
+
+    $phones = array(
+      "aa6114a3-344c-11e1-bd1e-68b599e32f91",
+      "c1a61053-4a19-11e4-b91c-0025902b8ec5",
+      "9d2a58e4-38f2-11e4-b179-0025902b8ec5",
+      "fcbe98de-ce07-11e4-9a04-0025902b8ec5",
+      "0aaae8e3-e23a-11e3-9383-0025902b8ec5",
+      "aa6114b8-344c-11e1-bd1e-68b599e32f91",
+      "aa6114f1-344c-11e1-bd1e-68b599e32f91",
+      "19b32aea-9b76-11e2-990e-0025902b8ef0",
+      "9e7a39de-ad6c-11e2-bd88-0025902b8ef1",
+      "aa611508-344c-11e1-bd1e-68b599e32f91",
+      "8d1203a4-e2b2-11e4-9a04-0025902b8ec5",
+      "c9b4cc2f-2b8d-11e5-8702-0025902b8ec5",
+      "aa611565-344c-11e1-bd1e-68b599e32f91",
+      "0fe7463d-0aa6-11e5-8796-0025902b8ec5",
+      "1e5718f6-f47f-11e4-b1ca-0025902b8ec5",
+      "aa611676-344c-11e1-bd1e-68b599e32f91",
+      "22ff3fa8-f4a1-11e4-b1ca-0025902b8ec5",
+      "b0738e79-344c-11e1-bd1e-68b599e32f91",
+      "8d1203a3-e2b2-11e4-9a04-0025902b8ec5",
+      "d4aa98d3-ced1-11e4-9a04-0025902b8ec5"
+    ); // массив идентификаторов для ьелефонов
+
+
+    switch ($op) {
+        case 'create':
+
+            //загрузка (создание продуктов)планшетов
+            if(in_array((string) $xml_element->Группы->Ид, $tablets)){
+                $node->type = 'tablets';
+            }
+
+            // загрузка (созднаие продуктов)телефонов
+            if(in_array((string) $xml_element->Группы->Ид, $phones)){
+                $node->type = 'phones';
+            }
+
+            break;
+        case 'update':
+
+            //загрузка (создание продуктов)планшетов
+            if(in_array((string) $xml_element->Группы->Ид, $tablets)){
+                $node->type = 'tablets';
+            }
+
+            // загрузка (созднаие продуктов)телефонов
+            if(in_array((string) $xml_element->Группы->Ид, $phones)){
+                $node->type = 'phones';
+            }
+
+            break;
+    }
+}
+
+
+function importkit_api_importkit_product($op, $product, $xml_element)
+{
+    $tablets = array(
+      "63420a3e-8481-11e4-957c-0025902b8ec5",
+      "145713cf-a58e-11e2-b997-0025902b8ef1",
+      "ef0b58b7-a6d2-11e4-adee-0025902b8ec5",
+      "af312e24-ae99-11e4-adee-0025902b8ec5",
+      "0aaae90f-e23a-11e3-9383-0025902b8ec5",
+      "f7bf591a-be16-11e3-bf74-0025902b8ec5",
+      "145713d4-a58e-11e2-b997-0025902b8ef1",
+      "145713d8-a58e-11e2-b997-0025902b8ef1",
+      "145713dd-a58e-11e2-b997-0025902b8ef1",
+      "f8f5d997-4b79-11e2-bee3-0025902b8ef1",
+      "d5b3a011-5b27-11e3-910f-0025902b8ef1",
+      "359afbf0-e36c-11e4-9a04-0025902b8ec5"
+    ); // масив идентификаторов для планшетов
+
+
+    $phones = array(
+      "aa6114a3-344c-11e1-bd1e-68b599e32f91",
+      "c1a61053-4a19-11e4-b91c-0025902b8ec5",
+      "9d2a58e4-38f2-11e4-b179-0025902b8ec5",
+      "fcbe98de-ce07-11e4-9a04-0025902b8ec5",
+      "0aaae8e3-e23a-11e3-9383-0025902b8ec5",
+      "aa6114b8-344c-11e1-bd1e-68b599e32f91",
+      "aa6114f1-344c-11e1-bd1e-68b599e32f91",
+      "19b32aea-9b76-11e2-990e-0025902b8ef0",
+      "9e7a39de-ad6c-11e2-bd88-0025902b8ef1",
+      "aa611508-344c-11e1-bd1e-68b599e32f91",
+      "8d1203a4-e2b2-11e4-9a04-0025902b8ec5",
+      "c9b4cc2f-2b8d-11e5-8702-0025902b8ec5",
+      "aa611565-344c-11e1-bd1e-68b599e32f91",
+      "0fe7463d-0aa6-11e5-8796-0025902b8ec5",
+      "1e5718f6-f47f-11e4-b1ca-0025902b8ec5",
+      "aa611676-344c-11e1-bd1e-68b599e32f91",
+      "22ff3fa8-f4a1-11e4-b1ca-0025902b8ec5",
+      "b0738e79-344c-11e1-bd1e-68b599e32f91",
+      "8d1203a3-e2b2-11e4-9a04-0025902b8ec5",
+      "d4aa98d3-ced1-11e4-9a04-0025902b8ec5"
+    ); // масив идентификаторов для телефонов
+
+    switch ($op) {
+        case 'create':
+
+            //загрузка (создание продуктов)планшетов
+            if(in_array((string) $xml_element->Группы->Ид, $tablets)){
+                $product->type = 'tablets';
+            }
+
+            // загрузка (созднаие продуктов)телефонов
+            if(in_array((string) $xml_element->Группы->Ид, $phones)){
+                $product->type = 'phones';
+            }
+
+            break;
+        case 'update':
+
+            //загрузка (создание продуктов)планшетов
+            if(in_array((string) $xml_element->Группы->Ид, $tablets)){
+                $product->type = 'tablets';
+            }
+
+            // загрузка (созднаие продуктов)телефонов
+            if(in_array((string) $xml_element->Группы->Ид, $phones)){
+                $product->type = 'phones';
+            }
+
+            break;
+    }
+}
+
+function importkit_api_importkit_stock($entity, $xml_element){
+    foreach($xml_element->Остатки->КоличествоПоГородам as $element) {
+
+        db_merge('importkit_cml_stock')->key(array(
+            'guid1' => $entity->guid1,
+            'guid2' => $entity->guid2,
+            'nid' => $entity->nid,
+            'warehouse' => (string) $element->ИдСклада,
+          ))->fields(array(
+            'guid1' => $entity->guid1,
+            'guid2' => $entity->guid2,
+            'pid' => $entity->product_id,
+            'nid' => $entity->nid,
+            'stock' => (string) $element->Количество,
+            'warehouse' => (string) $element->ИдСклада,
+          ))->execute();
+
+    }
+}
+

@@ -1,0 +1,10 @@
+name = Store content from CML
+description = Store content from CML for (Ubercart 3/Commerce)
+package = "Import KIT"
+
+dependencies[] = importkit
+dependencies[] = node
+
+version = "7.x-0.10-dev"
+core = "7.x"
+

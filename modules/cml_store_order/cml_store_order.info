@@ -1,0 +1,12 @@
+name = Store create order
+description = Store order from (Ubercart 3/Commerce) into CML format
+package = "Import KIT"
+
+dependencies[] = importkit
+dependencies[] = cml_store_content
+dependencies[] = cml_store_price
+dependencies[] = node
+
+version = "7.x-0.10-dev"
+core = "7.x"
+

@@ -1,0 +1,64 @@
+<?php
+// $Id $
+
+// bd72d913-55bc-11d9-848a-00112f43529a#dee6e177-55bc-11d9-848a-00112f43529a
+function cml_store_price_schema()
+{
+
+    $schema['importkit_cml_price'] = array(
+      'description' => 'Stores cml and associated data with node.',
+      'fields' => array(
+        'guid1' => array(
+          'description' => 'bd72d913-55bc-11d9-848a-00112f43529a#',
+          'type' => 'varchar',
+          'length' => 37,
+          // 36 * 2 # - разделяет подвид товара (зеленый, красный)
+          'not null' => true,
+          'default' => 0,
+        ),
+        'guid2' => array(
+          'description' => '#bd72d913-55bc-11d9-848a-00112f43529a',
+          'type' => 'varchar',
+          'length' => 37,
+          // 36 * 2 # - разделяет подвид товара (зеленый, красный)
+          'not null' => true,
+          'default' => 0,
+        ),
+        'pid' => array(
+          'description' => t('Product id.'),
+          'type' => 'int',
+          'length' => 11,
+          'not null' => true,
+          'default' => 0,
+        ),
+        'nid' => array(
+          'description' => t('Node id.'),
+          'type' => 'int',
+          'length' => 11,
+          'not null' => true,
+          'default' => 0,
+        ),
+        'price' => array(
+          'description' => 'The amount the customer pays for the product.',
+          'type' => 'numeric',
+          'precision' => 16,
+          'scale' => 5,
+          'not null' => true,
+          'default' => 0.0,
+        ),
+      ),
+      'primary key' => array('guid1', 'guid2'),
+      'indexes' => array(
+        'product' => array('pid', 'nid'),
+        'guid' => array('guid1', 'guid2')
+      ),
+    );
+
+    return $schema;
+}
+
+function cml_store_price_update_7000()
+{
+    $schema = cml_store_price_schema();
+    db_add_field('importkit_cml_price', 'price', $schema['importkit_cml_price']['fields']['price']);
+}

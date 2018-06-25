@@ -1,0 +1,136 @@
+<?php
+
+function cml_store_category_importkit_call_backs()
+{
+    return array(
+      'Группы' => 'cml_store_category_parse_category',
+      'terms' => 'cml_store_category_get_terms',
+      'imported_terms' => 'cml_store_category_get_imported',
+      'remove_term' => 'cml_store_category_remove_imported',
+    );
+}
+
+function cml_store_category_importkit_info()
+{
+    $path = drupal_get_path('module', 'cml_store_category') . '/listners';
+
+    return array(
+      'ImportkitListnerCategory' => $path . '/ImportkitListnerCategory',
+    );
+}
+
+function cml_store_category_parse_category($reader, $path, $ver, $created)
+{
+    if($categoryMap = cache_get('cml_store_category_category'))
+    {
+        $categoryMap = $categoryMap->data;
+    }
+
+    while ($reader->read() && !($reader->name == "Классификатор" && $reader->nodeType == XMLReader::END_ELEMENT)) {
+
+        cml_store_category_add_term($reader, $categoryMap);
+        $reader->trace();
+
+    }
+
+    if (!$categoryMap) {
+        return false;
+    }
+
+    cache_set('cml_store_category_category', $categoryMap, 'cache', CACHE_PERMANENT);
+
+    return true;
+}
+
+function cml_store_category_add_term($reader, &$categoryMap)
+{
+
+    static $categoryIdStack = array();
+
+    if ($reader->name == "Группы" && $reader->nodeType == XMLReader::ELEMENT) {
+
+    }
+
+    if ($reader->name == "Группы" && $reader->nodeType == XMLReader::END_ELEMENT) {
+      array_shift($categoryIdStack);
+    }
+
+    if ($reader->name == "Группа" && $reader->nodeType == XMLReader::ELEMENT) {
+
+        $element = $reader->readOuterXml();
+        $element = simplexml_load_string(trim($element));
+        $currentId = (string) $element->Ид;
+
+        if (count($categoryIdStack) && isset($categoryMap[$categoryIdStack[0]])) {
+            $parent = $categoryMap[$categoryIdStack[0]];
+        } else {
+            $parent = 0;
+        }
+        if (isset($element->Группы->Группа)) {
+            array_unshift($categoryIdStack, $currentId);
+        }
+
+        $tid = cml_store_category_term_save($element, $parent);
+        $categoryMap[$currentId] = $tid;
+        unset($element);
+
+    }
+
+}
+
+function cml_store_category_term_save($element, $parent = 0)
+{
+    static $catalog_vid;
+    if (!isset($catalog_vid)) {
+        $catalog_vid = variable_get('cml_store_category_vid', 1);
+    }
+    if (!($tid = db_query("SELECT tid FROM {importkit_cml_terms} WHERE vid = :vid AND guid = :guid LIMIT 1", array(
+        ':vid' => $catalog_vid,
+        ':guid' => (string) $element->Ид
+      ))->fetchField())
+    ) {
+        $tid = cml_store_category_term_create((string) $element->Ид, (string) $element->Наименование, $catalog_vid, $parent);
+    }
+
+    return $tid;
+}
+
+function cml_store_category_term_create($guid, $name, $vid, $parent = 0)
+{
+    $edit = (object) array('vid' => $vid, 'name' => $name, 'parent' => $parent);
+    if (taxonomy_term_save($edit)) {
+        db_insert('importkit_cml_terms')->fields(array(
+          'guid' => $guid,
+          'tid' => $edit->tid,
+          'vid' => $vid
+        ))->execute();
+        return $edit->tid;
+    }
+}
+
+function cml_store_category_taxonomy_term_delete($term)
+{
+    db_delete('importkit_cml_terms')->condition('tid', $term->tid)->execute();
+}
+
+function cml_store_category_get_terms()
+{
+    return db_query("SELECT COUNT(tid) AS C FROM {importkit_cml_terms}")->fetchField();
+}
+
+function cml_store_category_get_imported()
+{
+    $db_result = db_query("SELECT guid, tid FROM {importkit_cml_terms}");
+    $options = array();
+    foreach ($db_result as $row) {
+        // Формирование заданий
+        $options[$row->guid] = $row->tid;
+    }
+
+    return $options;
+}
+
+function cml_store_category_remove_imported($term)
+{
+    return taxonomy_term_delete($term);
+}

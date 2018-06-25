@@ -51,6 +51,13 @@ function cml_store_stock_schema()
           'not null' => true,
           'default' => '',
         ),
+        'region' => array(
+          'description' => 'Warehouse region.',
+          'type' => 'varchar',
+          'length' => 50,
+          'not null' => true,
+          'default' => '',
+        ),
       ),
       'primary key' => array('guid1', 'guid2', 'warehouse'),
       'indexes' => array(
@@ -73,4 +80,10 @@ function cml_store_stock_update_7001()
 {
     db_drop_primary_key('importkit_cml_stock');
     db_add_primary_key('importkit_cml_stock', array('guid1', 'guid2', 'warehouse'));
+}
+
+function cml_store_stock_update_7002()
+{
+  $schema = cml_store_stock_schema();
+  db_add_field('importkit_cml_stock', 'region', $schema['importkit_cml_stock']['fields']['region']);
 }

@@ -44,7 +44,7 @@ function importkit_api_importkit_node($op, $node, $xml_element)
       "b0738e79-344c-11e1-bd1e-68b599e32f91",
       "8d1203a3-e2b2-11e4-9a04-0025902b8ec5",
       "d4aa98d3-ced1-11e4-9a04-0025902b8ec5"
-    ); // массив идентификаторов для ьелефонов
+    ); // массив идентификаторов для телефонов
 
 
     switch ($op) {
@@ -149,7 +149,7 @@ function importkit_api_importkit_product($op, $product, $xml_element)
     }
 }
 
-function importkit_api_importkit_stock($entity, $xml_element){
+/*function importkit_api_importkit_stock($entity, $xml_element){
     foreach($xml_element->Остатки->КоличествоПоГородам as $element) {
 
         db_merge('importkit_cml_stock')->key(array(
@@ -164,8 +164,30 @@ function importkit_api_importkit_stock($entity, $xml_element){
             'nid' => $entity->nid,
             'stock' => (string) $element->Количество,
             'warehouse' => (string) $element->ИдСклада,
+            'region' => (string) $element->Регион,
           ))->execute();
 
     }
+}*/
+
+function importkit_api_importkit_stock($entity, $xml_element){
+  foreach($xml_element->Остатки->ОстаткиСклада as $element) {
+
+    db_merge('importkit_cml_stock')->key(array(
+      'guid1' => $entity->guid1,
+      'guid2' => $entity->guid2,
+      'nid' => $entity->nid,
+      'warehouse' => (string) $element->ИдСклада,
+    ))->fields(array(
+      'guid1' => $entity->guid1,
+      'guid2' => $entity->guid2,
+      'pid' => $entity->product_id,
+      'nid' => $entity->nid,
+      'stock' => (string) $element->Остаток,
+      'warehouse' => (string) $element->ИдСклада,
+      'region' => (string) $element->Регион,
+    ))->execute();
+
+  }
 }
 

@@ -744,4 +744,16 @@ function importkit_verbose($message)
     }
 }
 
+/*
+ * Implements hook_permission()
+ */
+function importkit_permission() {
+  return array(
+    'administer importkit' => array(
+      'title' => t('Administer importkit'),
+      'description' => t('Access for an users with an appropriate perms to administer the importkit module'),
+    ),
+  );
+}
+
 

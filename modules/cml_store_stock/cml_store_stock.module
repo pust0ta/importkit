@@ -178,7 +178,8 @@ function cml_store_stock_get_stock()
 
 function cml_store_stock_node_update($node)
 {
-    if ($node->type == variable_get('importkit_content_node_type', 'product') && isset($node->guid2) && (isset($node->operation) && $node->operation == 'update-stok')) {
+    // if ($node->type == variable_get('importkit_content_node_type', 'product') && isset($node->guid2) && (isset($node->operation) && $node->operation == 'update-stok')) {
+    if ($node->type == variable_get('importkit_content_node_type', 'product') && (isset($node->operation) && $node->operation == 'update-stok')) {
 
         db_merge('importkit_cml_stock')->key(array(
             'guid1' => $node->guid1,

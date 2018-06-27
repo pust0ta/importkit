@@ -152,6 +152,7 @@ function importkit_api_importkit_product($op, $product, $xml_element)
 function importkit_api_importkit_stock($entity, $xml_element){
   foreach($xml_element->Остатки->ОстаткиСклада as $element) {
 
+
     db_merge('importkit_cml_stock')->key(array(
       'guid1' => $entity->guid1,
       'guid2' => $entity->guid2,
@@ -160,7 +161,6 @@ function importkit_api_importkit_stock($entity, $xml_element){
     ))->fields(array(
       'guid1' => $entity->guid1,
       'guid2' => $entity->guid2,
-      'pid' => $entity->product_id,
       'nid' => $entity->nid,
       'stock' => (string) $element->Остаток,
       'warehouse' => (string) $element->ИдСклада,
@@ -170,3 +170,17 @@ function importkit_api_importkit_stock($entity, $xml_element){
   }
 }
 
+function importkit_api_node_load($nodes, $types){
+    $result = db_query('SELECT nid, stock, region FROM {importkit_cml_stock} WHERE nid IN(:nids)', array(
+          ':nids' => array_keys($nodes)));
+
+    // Add our extra data to the node objects.
+    foreach ($result as $record) {
+      // if ($nodes[$record->nid]->type == 'product'){
+        // $nodes[$record->nid]->importkit_stock[] = $record->stock;
+        // $nodes[$record->nid]->importkit_region[] = $record->region;
+        $nodes[$record->nid]->region_stock[$record->region] = $record->stock;
+      // }
+    }
+
+}

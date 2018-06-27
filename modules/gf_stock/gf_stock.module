@@ -24,6 +24,7 @@ function gf_stock_importkit_stock($entity, $xml_element){
   }
 }
 
+
 /**
  * Implements hook_node_load().
  */
@@ -37,7 +38,7 @@ function gf_stock_node_load($nodes, $types){
   foreach ($result as $record) {
     if (!$record->region) continue;
     $stock = (int) $record->stock;
-    // Складываем суммы остатков в регионе для разных представлений.
+    // Складываем суммы остатков в конкретном регионе для разных представлений.
     if (isset($nodes[$record->nid]->gf_region_stock[$record->region])) {
       $nodes[$record->nid]->gf_region_stock[$record->region] += $stock;
     }
@@ -45,4 +46,121 @@ function gf_stock_node_load($nodes, $types){
       $nodes[$record->nid]->gf_region_stock[$record->region] = $stock;
     }
   }
+}
+
+
+/**
+ * Implements hook_menu().
+ */
+function gf_stock_menu() {
+  $items['gf_stock/region_switch'] = array(
+    'title' => 'Stock Region Switcher',
+    'page callback' => 'gf_stock_region_switch',
+    'page arguments' => array(2),
+    'access arguments' => array(
+      'access content',
+    ),
+    'type' => MENU_CALLBACK,
+  );
+  return $items;
+}
+
+
+/**
+ * Массив со списком доступных регионов.
+ */
+function gf_stock_get_regions() {
+  return [
+    GF_STOCK_REGION_CN => GF_STOCK_REGION_CN,
+    GF_STOCK_REGION_RU => GF_STOCK_REGION_RU 
+  ];
+
+}
+
+
+/**
+ * Переключение региона пользователя.
+ */
+function gf_stock_region_switch($region=''){
+  if ($region) {
+    $regions = gf_stock_get_regions();
+    if (!in_array($region, $regions)) return;
+    else {
+      // Метку о выбранном регионе кладем пользователю в сессию.
+      $_SESSION['gf_stock_region'] = $regions[$region];
+    }
+  }
+  // Если регион не получе - обнуляем параметр в сессии.
+  elseif (isset($_SESSION['gf_stock_region'])) {
+    unset($_SESSION['gf_stock_region']);
+  }
+  drupal_goto();
+}
+
+
+/**
+ * Implements hook_block_info().
+ *
+ */
+function gf_stock_block_info() {
+  $blocks['gf_stock_region_switch'] = array(
+    'info' => t('GF Stock: user region switcher'),
+    'cache' => DRUPAL_NO_CACHE,
+  );
+  return $blocks;
+}
+
+
+/**
+ * Implements hook_block_view().
+ *
+ */
+function gf_stock_block_view($delta = '') {
+  switch ($delta) {
+    case 'gf_stock_region_switch':
+      $block['subject'] = '<none>';
+      $block['content'] = gf_stock_block_contents($delta);
+      break;
+  }
+  return $block;
+}
+
+/**
+ * A module-defined block content function.
+ */
+function gf_stock_block_contents($block) {
+  switch ($block) {
+    case 'gf_stock_region_switch':
+      $region_switch_path = 'gf_stock/region_switch';
+     
+      $regions = [l(t('All'), $region_switch_path, [ 
+        // 'attributes' => ['class' => ['active']],
+        'query' => drupal_get_destination(), 
+        'html' => true,
+      ])];
+      foreach(array_keys(gf_stock_get_regions()) as $region) {
+        $regions[] = l($region, $region_switch_path . '/' . $region, [ 'query' => drupal_get_destination(), 'html' => true,]);
+      }
+      $current_region = isset($_SESSION['gf_stock_region']) ? $_SESSION['gf_stock_region'] : NULL;
+      return theme('gf_stock_block_region_switcher', [
+        'regions' => $regions, 
+        'current_region' => $current_region
+      ]);
+  }
+}
+
+
+
+function gf_stock_theme($existing, $type, $theme, $path) {
+  return [
+    'gf_stock_block_region_switcher' => [
+      'variables' => [
+        'regions' => [],
+        'current_region' => NULL,
+      ],
+      'path' => drupal_get_path('module', 'gf_stock') . '/theme',
+      'template' => 'gf_stock_block_region_switcher',
+    ],
+  ];
+
 }

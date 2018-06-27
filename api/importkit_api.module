@@ -151,8 +151,6 @@ function importkit_api_importkit_product($op, $product, $xml_element)
 
 function importkit_api_importkit_stock($entity, $xml_element){
   foreach($xml_element->Остатки->ОстаткиСклада as $element) {
-
-
     db_merge('importkit_cml_stock')->key(array(
       'guid1' => $entity->guid1,
       'guid2' => $entity->guid2,

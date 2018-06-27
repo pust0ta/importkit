@@ -1,0 +1,5 @@
+name = "GF Stock"
+description = "Processing of stock data in warehouses for regions and further use of this data."
+core = "7.x"
+
+dependencies[] = cml_store_stock

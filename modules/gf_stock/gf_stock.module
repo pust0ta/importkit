@@ -1,0 +1,44 @@
+<?php
+
+/**
+ * Implements hook_importkit_stock().
+ */
+function gf_stock_importkit_stock($entity, $xml_element){
+  // Обновляем при импорте данные по остаткам в регионах.
+  foreach($xml_element->Остатки->ОстаткиСклада as $element) {
+    db_merge('importkit_cml_stock')->key(array(
+      'guid1' => $entity->guid1,
+      'guid2' => $entity->guid2,
+      'nid' => $entity->nid,
+      'warehouse' => (string) $element->ИдСклада,
+    ))->fields(array(
+      'stock' => (string) $element->Остаток,
+      'warehouse' => (string) $element->ИдСклада,
+      'region' => (string) $element->Регион,
+    ))->execute();
+
+  }
+}
+
+/**
+ * Implements hook_node_load().
+ */
+function gf_stock_node_load($nodes, $types){
+  $result = db_query('SELECT nid, stock, region 
+    FROM {importkit_cml_stock} 
+    WHERE nid IN(:nids)', array(':nids' => array_keys($nodes)),);
+
+  // Добавляем при загрузке нод-товаров поля с данными 
+  // по остаткам в регионах.
+  foreach ($result as $record) {
+    $stock = int($record->stock);
+    // Складываем суммы остатков в регионе для разных представлений.
+    if (isset($nodes[$record->nid]->region_stock[$record->region])) {
+      $nodes[$record->nid]->region_stock[$record->region] += $stock;
+    }
+    else{
+      $nodes[$record->nid]->gf_region_stock[$record->region] = $stock;
+    }
+  }
+
+}

@@ -1,5 +1,9 @@
 <?php
 
+// Строка - обозначение регионов.
+define('GF_STOCK_REGION_RU', 'ru');
+define('GF_STOCK_REGION_CN', 'cn');
+
 /**
  * Implements hook_importkit_stock().
  */
@@ -26,19 +30,19 @@ function gf_stock_importkit_stock($entity, $xml_element){
 function gf_stock_node_load($nodes, $types){
   $result = db_query('SELECT nid, stock, region 
     FROM {importkit_cml_stock} 
-    WHERE nid IN(:nids)', array(':nids' => array_keys($nodes)),);
+    WHERE nid IN(:nids)', array(':nids' => array_keys($nodes),));
 
   // Добавляем при загрузке нод-товаров поля с данными 
   // по остаткам в регионах.
   foreach ($result as $record) {
-    $stock = int($record->stock);
+    if (!$record->region) continue;
+    $stock = (int) $record->stock;
     // Складываем суммы остатков в регионе для разных представлений.
-    if (isset($nodes[$record->nid]->region_stock[$record->region])) {
-      $nodes[$record->nid]->region_stock[$record->region] += $stock;
+    if (isset($nodes[$record->nid]->gf_region_stock[$record->region])) {
+      $nodes[$record->nid]->gf_region_stock[$record->region] += $stock;
     }
     else{
       $nodes[$record->nid]->gf_region_stock[$record->region] = $stock;
     }
   }
-
 }

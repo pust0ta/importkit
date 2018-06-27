@@ -118,7 +118,7 @@ function gf_stock_block_info() {
 function gf_stock_block_view($delta = '') {
   switch ($delta) {
     case 'gf_stock_region_switch':
-      $block['subject'] = '<none>';
+      $block['subject'] = 'Select warehouse region';
       $block['content'] = gf_stock_block_contents($delta);
       break;
   }
@@ -131,17 +131,20 @@ function gf_stock_block_view($delta = '') {
 function gf_stock_block_contents($block) {
   switch ($block) {
     case 'gf_stock_region_switch':
+      $regions = [];
+
       $region_switch_path = 'gf_stock/region_switch';
-     
-      $regions = [l(t('All'), $region_switch_path, [ 
-        // 'attributes' => ['class' => ['active']],
+      $link_options = [ 
         'query' => drupal_get_destination(), 
         'html' => true,
-      ])];
+      ];
+      $current_region = isset($_SESSION['gf_stock_region']) ? $_SESSION['gf_stock_region'] : 'all';
+
+      $regions['all'] = l(t('All'), $region_switch_path, $link_options);
+
       foreach(array_keys(gf_stock_get_regions()) as $region) {
-        $regions[] = l($region, $region_switch_path . '/' . $region, [ 'query' => drupal_get_destination(), 'html' => true,]);
+        $regions[$region] = l($region, $region_switch_path . '/' . $region, $link_options);
       }
-      $current_region = isset($_SESSION['gf_stock_region']) ? $_SESSION['gf_stock_region'] : NULL;
       return theme('gf_stock_block_region_switcher', [
         'regions' => $regions, 
         'current_region' => $current_region

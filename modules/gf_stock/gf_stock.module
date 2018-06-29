@@ -1,6 +1,7 @@
 <?php
 
 // Строка - обозначение регионов.
+define('GF_STOCK_REGION_ALL', 'all');
 define('GF_STOCK_REGION_RU', 'ru');
 define('GF_STOCK_REGION_CN', 'cn');
 
@@ -62,6 +63,15 @@ function gf_stock_menu() {
     ),
     'type' => MENU_CALLBACK,
   );
+    $items['admin/importkit/gf_stock'] = array(
+      'title' => t('GF Stock'),
+      'description' => 'GF Stock module settings',
+      'access arguments' => array('administer importkit'),
+      'page callback' => 'drupal_get_form',
+      'page arguments' => ['gf_stock_settings'],
+      'type' => MENU_LOCAL_TASK,
+      'weight' => 2,
+    );
   return $items;
 }
 
@@ -138,22 +148,29 @@ function gf_stock_block_contents($block) {
         'query' => drupal_get_destination(), 
         'html' => true,
       ];
-      $current_region = isset($_SESSION['gf_stock_region']) ? $_SESSION['gf_stock_region'] : 'all';
 
-      $regions['all'] = l(t('All'), $region_switch_path, $link_options);
+      $regions[GF_STOCK_REGION_ALL] = l(t('All'), $region_switch_path, $link_options);
 
       foreach(array_keys(gf_stock_get_regions()) as $region) {
         $regions[$region] = l($region, $region_switch_path . '/' . $region, $link_options);
       }
       return theme('gf_stock_block_region_switcher', [
         'regions' => $regions, 
-        'current_region' => $current_region
+        'current_region' => gf_stock_get_current_region()
       ]);
   }
 }
 
 
+function gf_stock_get_current_region() {
+  $default_region = variable_get('gf_stock_default_region', GF_STOCK_REGION_ALL);
+  return isset($_SESSION['gf_stock_region']) ? $_SESSION['gf_stock_region'] : $default_region;
+}
 
+
+/**
+ * Implements hook_theme().
+ */
 function gf_stock_theme($existing, $type, $theme, $path) {
   return [
     'gf_stock_block_region_switcher' => [
@@ -166,4 +183,24 @@ function gf_stock_theme($existing, $type, $theme, $path) {
     ],
   ];
 
+}
+
+
+/**
+ * Форма натроек модуля.
+ */
+function gf_stock_settings() {
+  $options = [];
+  $options[GF_STOCK_REGION_ALL] = t('All');
+  foreach(gf_stock_get_regions() as $name => $region){
+    $options[$name] = $region;
+  }
+  $form['gf_stock_default_region'] = array(
+    '#type' => 'select',
+    '#title' => t('Default Region'),
+    '#description' => t('The stock region that will be selected if the user did`t select their region.'),
+    '#options' => $options,
+    '#default_value' => variable_get('gf_stock_default_region', GF_STOCK_REGION_ALL),
+  );
+  return system_settings_form($form);
 }

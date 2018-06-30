@@ -204,3 +204,14 @@ function gf_stock_settings() {
   );
   return system_settings_form($form);
 }
+
+
+/**
+ * Implements hook_views_api().
+ */
+function gf_stock_views_api() {
+  return array(
+    'api' => 3,
+    'path' => drupal_get_path('module', 'gf_stock') . '/views',
+  );
+}

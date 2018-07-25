@@ -54,6 +54,12 @@ function cml_store_price_batch($argument, $options, &$context)
                 $node->guid1 = $guid1;
                 $node->guid2 = $guid2;
                 $node->operation = 'update-price';
+
+                // Invoke hook_importkit_price
+                // При импорте цены разрешаем вмешиваться в процесс 
+                // сторонним модулям.
+                // module_invoke_all('importkit_price', $node, $element);
+
                 cml_store_price_ubercart_update_price($node, $element, false);
                 $result = node_save($node);
 

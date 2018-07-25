@@ -5,6 +5,15 @@ define('GF_STOCK_REGION_ALL', 'all');
 define('GF_STOCK_REGION_RU', 'ru');
 define('GF_STOCK_REGION_CN', 'cn');
 
+
+/**
+ * Implements hook_importkit_price().
+ */
+// function gf_stock_importkit_price($entity, $xml_element){
+//   dsm($xml_element);
+// }
+
+
 /**
  * Implements hook_importkit_stock().
  */
@@ -128,7 +137,7 @@ function gf_stock_block_info() {
 function gf_stock_block_view($delta = '') {
   switch ($delta) {
     case 'gf_stock_region_switch':
-      $block['subject'] = 'Select warehouse region';
+      $block['subject'] = t('Select warehouse region');
       $block['content'] = gf_stock_block_contents($delta);
       break;
   }

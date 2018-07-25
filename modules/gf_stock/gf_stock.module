@@ -4,6 +4,25 @@
 define('GF_STOCK_REGION_ALL', 'all');
 define('GF_STOCK_REGION_RU', 'ru');
 define('GF_STOCK_REGION_CN', 'cn');
+define('GF_STOCK_CURRENCY_CN', 'юан');
+define('GF_STOCK_CURRENCY_RU', 'руб');
+
+
+function _gf_stock_convert_to_default_currency($sum, $sum_currency){
+  $default_currency = drupal_strtolower(variable_get('gf_stock_region_price_currency', 
+    GF_STOCK_CURRENCY_CN));
+  $sum_currency = drupal_strtolower($sum_currency);
+  if ($default_currency !== $sum_currency) {
+    $exchange_rate = variable_get('gf_stock_yuan_exchange_rate');
+    switch ($default_currency) {
+    case GF_STOCK_CURRENCY_CN:
+     return ($sum / $exchange_rate);
+    case GF_STOCK_CURRENCY_RU:
+     return ($sum * $exchange_rate);
+    }
+  }
+  return $sum;
+}
 
 
 /**
@@ -228,7 +247,11 @@ function gf_stock_settings() {
     gf_stock_update_yuan_exchange_rate(); 
   }
 
-  $form['gf_stock_current_yuan_exchange_rate'] = array(
+  $form['gf_stock_currency'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Basic Currency Settings')
+  );
+  $form['gf_stock_currency']['gf_stock_current_yuan_exchange_rate'] = array(
     '#markup' => t('The current exchange rate of the yuan to the 
     ruble is @rate rubles per 1 yuan. Date of last update: @date',
 array(
@@ -236,6 +259,18 @@ array(
   '@date' => variable_get('gf_stock_yuan_rate_last_update')
 )),
   );
+
+$form['gf_stock_currency']['gf_stock_region_price_currency'] = array(
+  '#type' => 'select',
+  '#title' => t('Default currency'),
+  '#description' => t('The currency in which the imported prices will be stored.'),
+  '#options' => array(
+    GF_STOCK_CURRENCY_CN => t('Yuan'),
+    GF_STOCK_CURRENCY_RU => t('Ruble')
+  ),
+  '#default_value' => variable_get('gf_stock_region_price_currency', GF_STOCK_CURRENCY_CN),
+);
+
 $form['gf_stock_region_prices'] = array(
   '#type' => 'fieldset',
   '#title' => t('Prices by region'),
@@ -249,8 +284,9 @@ $query_region_ids = db_select('gf_stock_prices', 'p')
   ->distinct('p.price_id' )
   ->execute()
   ->fetchAll();
+
 foreach($query_region_ids as $name=>$region_id) {
-  $region_ids[$region_id->price_id] = '(' . $region_id->currency . ') ' . $region_id->price_id;
+  $region_ids[$region_id->price_id] = $region_id->price_id;
 }
 
 foreach(gf_stock_get_regions() as $name => $region){
@@ -304,9 +340,23 @@ function gf_stock_get_region_price($nid, $region=NULL) {
 }
 
 function gf_stock_uc_product_alter(&$node) {
-  if($price = gf_stock_get_region_price($node->nid)) {
-    $node->price = $price;
+  $prices = db_select('gf_stock_prices', 'p')
+    ->fields('p', array('price','price_id', 'currency'))
+    ->condition('p.nid', $node->nid)
+    ->execute()
+    ->fetchAllAssoc('price_id');
+
+  $node->gf_stock_region_prices = array();
+  foreach(array_keys(gf_stock_get_regions()) as $region) {
+    $obj = variable_get('gf_stock_region_price_' . $region);
+    $price = _gf_stock_convert_to_default_currency((double) $prices[$obj]->price, 
+      $prices[$obj]->currency);
+    $node->gf_stock_region_prices[$region] = $price;
+
   }
+  // dsm($prices);
+  // dsm($node->gf_stock_region_prices);
+  // dsm($node);
 }
 
 

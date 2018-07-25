@@ -62,11 +62,11 @@ function gf_stock_importkit_stock($entity, $xml_element){
  * Implements hook_node_load().
  */
 function gf_stock_node_load($nodes, $types){
-  $result = db_query('SELECT nid, stock, region 
-    FROM {importkit_cml_stock} 
+  $result = db_query('SELECT nid, stock, region
+    FROM {importkit_cml_stock}
     WHERE nid IN(:nids)', array(':nids' => array_keys($nodes),));
 
-  // Добавляем при загрузке нод-товаров поля с данными 
+  // Добавляем при загрузке нод-товаров поля с данными
   // по остаткам в регионах.
   foreach ($result as $record) {
     if (!$record->region) continue;
@@ -95,15 +95,15 @@ function gf_stock_menu() {
     ),
     'type' => MENU_CALLBACK,
   );
-    $items['admin/importkit/gf_stock'] = array(
-      'title' => t('GF Stock'),
-      'description' => 'GF Stock module settings',
-      'access arguments' => array('administer importkit'),
-      'page callback' => 'drupal_get_form',
-      'page arguments' => ['gf_stock_settings'],
-      'type' => MENU_LOCAL_TASK,
-      'weight' => 2,
-    );
+  $items['admin/importkit/gf_stock'] = array(
+    'title' => t('GF Stock'),
+    'description' => 'GF Stock module settings',
+    'access arguments' => array('administer importkit'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => ['gf_stock_settings'],
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 2,
+  );
   return $items;
 }
 
@@ -114,7 +114,7 @@ function gf_stock_menu() {
 function gf_stock_get_regions() {
   return [
     GF_STOCK_REGION_CN => GF_STOCK_REGION_CN,
-    GF_STOCK_REGION_RU => GF_STOCK_REGION_RU 
+    GF_STOCK_REGION_RU => GF_STOCK_REGION_RU
   ];
 
 }
@@ -159,10 +159,10 @@ function gf_stock_block_info() {
  */
 function gf_stock_block_view($delta = '') {
   switch ($delta) {
-    case 'gf_stock_region_switch':
-      $block['subject'] = t('Select warehouse region');
-      $block['content'] = gf_stock_block_contents($delta);
-      break;
+  case 'gf_stock_region_switch':
+    $block['subject'] = t('Select warehouse region');
+    $block['content'] = gf_stock_block_contents($delta);
+    break;
   }
   return $block;
 }
@@ -172,24 +172,24 @@ function gf_stock_block_view($delta = '') {
  */
 function gf_stock_block_contents($block) {
   switch ($block) {
-    case 'gf_stock_region_switch':
-      $regions = [];
+  case 'gf_stock_region_switch':
+    $regions = [];
 
-      $region_switch_path = 'gf_stock/region_switch';
-      $link_options = [ 
-        'query' => drupal_get_destination(), 
-        'html' => true,
-      ];
+    $region_switch_path = 'gf_stock/region_switch';
+    $link_options = [
+      'query' => drupal_get_destination(),
+      'html' => true,
+    ];
 
-      $regions[GF_STOCK_REGION_ALL] = l(t('All'), $region_switch_path, $link_options);
+    $regions[GF_STOCK_REGION_ALL] = l(t('All'), $region_switch_path, $link_options);
 
-      foreach(array_keys(gf_stock_get_regions()) as $region) {
-        $regions[$region] = l($region, $region_switch_path . '/' . $region, $link_options);
-      }
-      return theme('gf_stock_block_region_switcher', [
-        'regions' => $regions, 
-        'current_region' => gf_stock_get_current_region()
-      ]);
+    foreach(array_keys(gf_stock_get_regions()) as $region) {
+      $regions[$region] = l($region, $region_switch_path . '/' . $region, $link_options);
+    }
+    return theme('gf_stock_block_region_switcher', [
+      'regions' => $regions,
+      'current_region' => gf_stock_get_current_region()
+    ]);
   }
 }
 
@@ -222,17 +222,41 @@ function gf_stock_theme($existing, $type, $theme, $path) {
  * Форма натроек модуля.
  */
 function gf_stock_settings() {
+  $form['gf_stock_region_prices'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Prices by region'),
+  );
   $options = [];
   $options[GF_STOCK_REGION_ALL] = t('All');
+
+  // Получаем список ID для цен регионов.
+  $query_region_ids = db_select('gf_stock_prices', 'p')
+    ->fields('p', array('price_id', 'currency'))
+    ->distinct('p.price_id' )
+    ->execute()
+    ->fetchAll();
+  foreach($query_region_ids as $name=>$region_id) {
+    $region_ids[$region_id->price_id] = '(' . $region_id->currency . ') ' . $region_id->price_id;
+  }
+
   foreach(gf_stock_get_regions() as $name => $region){
     $options[$name] = $region;
+    $form['gf_stock_region_prices']['gf_stock_region_price_'. $name] = array(
+      '#type' => 'select',
+      '#title' => t('Price ID for Region @region', array('@region' => drupal_strtoupper($name))),
+      '#description' => t('The stock region that will be selected if the user did`t select their region.'),
+      '#options' => $region_ids,
+      '#default_value' => variable_get('gf_stock_region_price_' . $name),
+    );
   }
+
   $form['gf_stock_default_region'] = array(
     '#type' => 'select',
     '#title' => t('Default Region'),
     '#description' => t('The stock region that will be selected if the user did`t select their region.'),
     '#options' => $options,
     '#default_value' => variable_get('gf_stock_default_region', GF_STOCK_REGION_ALL),
+    '#weight' => -1,
   );
   return system_settings_form($form);
 }

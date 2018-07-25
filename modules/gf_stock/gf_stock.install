@@ -1,0 +1,47 @@
+<?php 
+
+function gf_stock_schema() {
+  $schema = array();
+  $schema['gf_stock_prices'] = array(
+    'description' => 'Table for storing prices for different regions.',
+    'fields' => array(
+      'nid' => array(
+        'description' => t('Node(Product) id.'),
+        'type' => 'int',
+        'length' => 11,
+        'not null' => true,
+        'default' => 0,
+      ),
+      'price_id' => array(
+        'description' => 'A region price id(hash)',
+        'type' => 'varchar',
+        'length' => 37,
+        'not null' => true,
+        'default' => 0,
+      ),
+      'price' => array(
+        'description' => 'Price value',
+        'type' => 'numeric',
+        'precision' => 16,
+        'scale' => 5,
+        'not null' => TRUE,
+        'default' => 0.0,
+      ),
+      'currency' => array(
+        'description' => 'A region price currency',
+        'type' => 'varchar',
+        'length' => 11,
+        'not null' => true,
+        'default' => 0,
+      ),
+    ),
+    'primary key' => array('nid', 'price_id'),
+  );
+  return $schema;
+}
+
+function gf_stock_update_7001() {
+  $schema = gf_stock_schema();
+  if(!db_table_exists('gf_stock_price'))
+    db_create_table('gf_stock_prices', $schema['gf_stock_prices']);
+}

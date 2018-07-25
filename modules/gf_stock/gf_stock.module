@@ -9,10 +9,33 @@ define('GF_STOCK_REGION_CN', 'cn');
 /**
  * Implements hook_importkit_price().
  */
-// function gf_stock_importkit_price($entity, $xml_element){
-//   dsm($xml_element);
-// }
+function gf_stock_importkit_price($entity, $xml_element){
+  // Обновление/импорт данных о ценах по регионам.
+  $prices = $xml_element->Цены->Цена;
+  foreach ($prices as $price) {
+    db_merge('gf_stock_prices')
+      ->key(array(
+        'nid' => $entity->nid,
+        'price_id' => $price->ИдТипаЦены)
+      )->fields(array(
+        'price' => $price->ЦенаЗаЕдиницу,
+        'currency' => $price->Валюта,
+      ))
+      ->execute();
+  }
+}
 
+
+/**
+ * Implements hook_node_delete().
+ */
+function gf_stock_node_delete($node) {
+  // При удалении ноды удаляем запись с оной из таблицы
+  // с ценами регионов.
+  db_delete('gf_stock_prices')
+    ->condition('nid', $node->nid)
+    ->execute();
+}
 
 /**
  * Implements hook_importkit_stock().

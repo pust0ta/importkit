@@ -231,10 +231,10 @@ function gf_stock_settings() {
   $form['gf_stock_current_yuan_exchange_rate'] = array(
     '#markup' => t('The current exchange rate of the yuan to the 
     ruble is @rate rubles per 1 yuan. Date of last update: @date',
-                  array(
-                    '@rate' => variable_get('gf_stock_yuan_exchange_rate'),
-                    '@date' => variable_get('gf_stock_yuan_rate_last_update')
-                  )),
+array(
+  '@rate' => variable_get('gf_stock_yuan_exchange_rate'),
+  '@date' => variable_get('gf_stock_yuan_rate_last_update')
+)),
   );
 $form['gf_stock_region_prices'] = array(
   '#type' => 'fieldset',
@@ -312,9 +312,14 @@ function gf_stock_uc_product_alter(&$node) {
 
 function gf_stock_get_yuan_exchange_rate() {
   $url_json = 'https://www.cbr-xml-daily.ru/daily_json.js';
-  $data = json_decode(file_get_contents($url_json)); 
-  $rate = ($data->Valute->CNY->Value / 10);
-  $date = $data->Date;
+  try {
+    $data = json_decode(file_get_contents($url_json)); 
+    $rate = ($data->Valute->CNY->Value / 10);
+    $date = $data->Date;
+  } catch(Exception $e) {
+    watchdog('gf_stock', $e->getMessage(), array(), WATCHDOG_ERROR);
+    return;
+  }
   return array(
     'rate' => $rate, 
     'date' => $date
@@ -322,7 +327,8 @@ function gf_stock_get_yuan_exchange_rate() {
 }
 
 function gf_stock_update_yuan_exchange_rate() {
-  $data = gf_stock_get_yuan_exchange_rate();
-  variable_set('gf_stock_yuan_exchange_rate', $data['rate'] );
-  variable_set('gf_stock_yuan_rate_last_update', $data['date'] );
+  if($data = gf_stock_get_yuan_exchange_rate()){
+    variable_set('gf_stock_yuan_exchange_rate', $data['rate'] );
+    variable_set('gf_stock_yuan_rate_last_update', $data['date'] );
+  }
 }

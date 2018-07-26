@@ -1,6 +1,6 @@
 <?php
 
-// Строка - обозначение регионов.
+// Строка - обозначение регионов и нац. валют.
 define('GF_STOCK_REGION_ALL', 'all');
 define('GF_STOCK_REGION_RU', 'ru');
 define('GF_STOCK_REGION_CN', 'cn');
@@ -8,6 +8,9 @@ define('GF_STOCK_CURRENCY_CN', 'юан');
 define('GF_STOCK_CURRENCY_RU', 'руб');
 
 
+/**
+ * Переводим в нужную валюту(соответственно настроек) региональные ценники.
+ */
 function _gf_stock_convert_to_default_currency($sum, $sum_currency){
   $default_currency = drupal_strtolower(variable_get('gf_stock_region_price_currency', 
     GF_STOCK_CURRENCY_CN));
@@ -87,16 +90,10 @@ function gf_stock_node_load($nodes, $types){
     FROM {importkit_cml_stock}
     WHERE nid IN(:nids)
     AND region<>''", array(':nids' => array_keys($nodes),));
-  // $result = db_query("SELECT i.nid, i.stock, i.region, p.price, p.price_id
-  //   FROM {importkit_cml_stock} i
-  //   LEFT JOIN {gf_stock_prices} p ON i.nid = p.nid
-  //   WHERE i.nid IN(:nids) 
-  //   AND i.region <> ''", array(':nids' => array_keys($nodes),));
 
   // Добавляем при загрузке нод-товаров поля с данными
   // по остаткам в регионах.
   foreach ($result as $record) {
-    // if (!$record->region) continue;
     $stock = (int) $record->stock;
     // Складываем суммы остатков в конкретном регионе для разных представлений.
     if (isset($nodes[$record->nid]->gf_region_stock[$record->region])) {
@@ -113,7 +110,7 @@ function gf_stock_node_load($nodes, $types){
     ->execute()
     ->fetchAllAssoc('price_id');
 
-  $price_map = gf_stock_get_region_price_map();
+  $price_map = _gf_stock_get_region_price_map();
   foreach ($prices as $price_id=>$price) {
     $price_value = _gf_stock_convert_to_default_currency((double) $price->price, 
         $price->currency);
@@ -121,7 +118,11 @@ function gf_stock_node_load($nodes, $types){
   }
 }
 
-function gf_stock_get_region_price_map(){
+/**
+ * Функция-хелпер для получения 
+ * массива код_цены_региона=>индекс_региона('ru' или 'cn').
+ */
+function _gf_stock_get_region_price_map(){
   $result = [];
   foreach(array_keys(gf_stock_get_regions()) as $region) {
     $price_id = variable_get('gf_stock_region_price_' . $region);
@@ -134,6 +135,7 @@ function gf_stock_get_region_price_map(){
  * Implements hook_menu().
  */
 function gf_stock_menu() {
+  // Линк для переключения региона пользователя.
   $items['gf_stock/region_switch'] = array(
     'title' => 'Stock Region Switcher',
     'page callback' => 'gf_stock_region_switch',
@@ -143,6 +145,7 @@ function gf_stock_menu() {
     ),
     'type' => MENU_CALLBACK,
   );
+  // Страница настроек модуля.
   $items['admin/importkit/gf_stock'] = array(
     'title' => t('GF Stock'),
     'description' => 'GF Stock module settings',
@@ -216,7 +219,7 @@ function gf_stock_block_view($delta = '') {
 }
 
 /**
- * A module-defined block content function.
+ * Формируем содержимое для объявленных в модуле блоков.
  */
 function gf_stock_block_contents($block) {
   switch ($block) {
@@ -242,6 +245,9 @@ function gf_stock_block_contents($block) {
 }
 
 
+/**
+ * Возврат текущего региона пользователя.
+ */
 function gf_stock_get_current_region() {
   $default_region = variable_get('gf_stock_default_region', GF_STOCK_REGION_ALL);
   return isset($_SESSION['gf_stock_region']) ? $_SESSION['gf_stock_region'] : $default_region;
@@ -280,6 +286,7 @@ function gf_stock_settings() {
     '#type' => 'fieldset',
     '#title' => t('Basic Currency Settings')
   );
+  // Информация о текущем курсе юаня к рублю.
   $form['gf_stock_currency']['gf_stock_current_yuan_exchange_rate'] = array(
     '#markup' => t('The current exchange rate of the yuan to the 
     ruble is @rate rubles per 1 yuan. Date of last update: @date',
@@ -289,6 +296,7 @@ array(
 )),
   );
 
+// Выбор валюты по-умолчанию.
 $form['gf_stock_currency']['gf_stock_region_price_currency'] = array(
   '#type' => 'select',
   '#title' => t('Default currency'),
@@ -320,6 +328,7 @@ foreach($query_region_ids as $name=>$region_id) {
 
 foreach(gf_stock_get_regions() as $name => $region){
   $options[$name] = $region;
+  // Привязки имеющихся ID цен регионов к конкретным регионам.
   $form['gf_stock_region_prices']['gf_stock_region_price_'. $name] = array(
     '#type' => 'select',
     '#title' => t('Price ID for Region @region', array('@region' => drupal_strtoupper($name))),
@@ -329,6 +338,7 @@ foreach(gf_stock_get_regions() as $name => $region){
   );
 }
 
+// Регион по-умолчанию. Когда пол-ль не выбирал никаких регионов.
 $form['gf_stock_default_region'] = array(
   '#type' => 'select',
   '#title' => t('Default Region'),
@@ -351,42 +361,10 @@ function gf_stock_views_api() {
   );
 }
 
-function gf_stock_get_region_price($nid, $region=NULL) {
-
-  if (is_null($region) && isset($_SESSION['gf_stock_region'])) {
-    $region = $_SESSION['gf_stock_region'];
-  }
-
-  $region_id = variable_get('gf_stock_region_price_' . $region);
-  if ($region_id){
-    return db_select('gf_stock_prices', 'p')
-      ->fields('p', array('price'))
-      ->condition('p.nid', $nid)
-      ->condition('p.price_id', $region_id)
-      ->execute()
-      ->fetchField();
-  }
-}
-
-// function gf_stock_uc_product_alter(&$node) {
-//   $prices = db_select('gf_stock_prices', 'p')
-//     ->fields('p', array('price','price_id', 'currency'))
-//     ->condition('p.nid', $node->nid)
-//     ->execute()
-//     ->fetchAllAssoc('price_id');
-
-//   $node->gf_stock_region_prices = array();
-//   foreach(array_keys(gf_stock_get_regions()) as $region) {
-//     $obj = variable_get('gf_stock_region_price_' . $region);
-//     $price = _gf_stock_convert_to_default_currency((double) $prices[$obj]->price, 
-//       $prices[$obj]->currency);
-//     $node->gf_stock_region_prices[$region] = $price;
-
-//   }
-// }
-
-
-function gf_stock_get_yuan_exchange_rate() {
+/**
+ * Получение актуального курса юаня к рублю.
+ */
+function _gf_stock_get_yuan_exchange_rate() {
   $url_json = 'https://www.cbr-xml-daily.ru/daily_json.js';
   try {
     $data = json_decode(file_get_contents($url_json)); 
@@ -402,9 +380,25 @@ function gf_stock_get_yuan_exchange_rate() {
   );
 }
 
+/**
+ * Обновление курса юаня, используемого при конвертациях на сайте.
+ */
 function gf_stock_update_yuan_exchange_rate() {
-  if($data = gf_stock_get_yuan_exchange_rate()){
+  if($data = _gf_stock_get_yuan_exchange_rate()){
     variable_set('gf_stock_yuan_exchange_rate', $data['rate'] );
     variable_set('gf_stock_yuan_rate_last_update', $data['date'] );
+  }
+}
+
+/**
+ * Implements hook_cron().
+ *
+ * Обновляем курс юаня к рублю по крону раз в сутки.
+ */
+function gf_stock_cron() {
+  $last_update = variable_get('gf_stock_yuan_rate_last_update', 0);
+  $time_passed = (REQUEST_TIME - strtotime($last_update));
+  if ($time_passed > (60*60*24)) {
+    gf_stock_update_yuan_exchange_rate();
   }
 }

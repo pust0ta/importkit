@@ -40,6 +40,20 @@ function gf_stock_schema() {
   return $schema;
 }
 
+
+/**
+ * Implements hook_uninstall().
+ */
+function gf_stock_uninstall() {
+  db_delete('variable')
+    ->condition('name', "gf_stock_%", 'LIKE')
+    ->execute();
+}
+
+
+/**
+ * Implements hook_update_N().
+ */
 function gf_stock_update_7001() {
   $schema = gf_stock_schema();
   if(!db_table_exists('gf_stock_price'))

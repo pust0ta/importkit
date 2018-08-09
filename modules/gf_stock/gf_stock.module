@@ -2,8 +2,8 @@
 
 // Строка - обозначение регионов и нац. валют.
 define('GF_STOCK_REGION_ALL', 'all');
-define('GF_STOCK_REGION_RU', 'ru');
-define('GF_STOCK_REGION_CN', 'cn');
+define('GF_STOCK_REGION_RU', 'Russia');
+define('GF_STOCK_REGION_CN', 'China');
 define('GF_STOCK_CURRENCY_CN', 'юан');
 define('GF_STOCK_CURRENCY_RU', 'руб');
 

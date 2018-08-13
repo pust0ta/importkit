@@ -41,5 +41,59 @@ function gf_stock_views_data(){
     ],
   ];
 
+  // Цены по регионам.
+  $data['gf_stock_prices']['table']['group'] = t('GF Region Prices');
+  $data['importkit_cml_stock']['table']['base'] = [
+    'field' => 'nid',
+    'title' => t('Product nid'),
+  ];
+    $data['gf_stock_prices']['table']['join'] = array(
+    'node' => array(
+      'left_field' => 'nid',
+      'field' => 'nid',
+    ),
+  );
+  $data['gf_stock_prices']['nid'] = [
+    'title' => t('Product Node Nid'),
+    'help' => t('Product Node identifier.'),
+    'relationship' => [
+      'base' => 'node', 
+      'base field' => 'nid', 
+      'handler' => 'views_handler_relationship',
+      'label' => t('Product'),
+      'title' => t('Product'),
+    ],
+  ];
+  $data['gf_stock_prices']['price_id'] = array(
+    'title' => t('Price ID'),
+    'help' => t('A region price id(hash).'),
+    'field' => array(
+      'click sortable' => TRUE,
+    ),
+    'filter' => array(
+      'handler' => 'views_handler_filter_string',
+    ),
+    'sort' => array(
+      'handler' => 'views_handler_sort',
+    ),
+    'argument' => array(
+      'handler' => 'views_handler_argument_string',
+    ),
+  );
+  $data['gf_stock_prices']['price'] = [
+    'title' => t('Region Price'),
+    'help' => t('Price for a specific region.'),
+    'field' => array(
+      'handler' => 'views_handler_field_numeric',
+      'click sortable' => TRUE,
+    ),
+    'filter' => array(
+      'handler' => 'views_handler_filter_numeric',
+    ),
+    'sort' => array(
+      'handler' => 'views_handler_sort',
+    ),
+  ];
+
   return $data;
 }

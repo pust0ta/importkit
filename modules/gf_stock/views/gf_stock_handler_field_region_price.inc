@@ -18,8 +18,11 @@ class gf_stock_handler_field_region_price extends views_handler_field_numeric{
    * {@inheritdoc}
    */
   public function query() {
-    $table_alias = $this->ensure_my_table();
+    parent::query();
+    $table = $this->ensure_my_table();
     $region = $this->options['gf_stock_region_price'];
-    $this->query->add_where(0, $table_alias . '.price_id', $region);
+    $this->query
+        ->add_where($this->options['group'], db_or()
+        ->condition($table . '.price_id', $region));
   }
 }

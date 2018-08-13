@@ -37,9 +37,11 @@ trait gf_stock_handler_trait {
 trait gf_stock_region_price_trait {
 
   public function construct() {
-    $this->gf_stock_region_prices = _gf_stock_get_region_price_map();
     parent::construct();
+    $this->additional_fields['currency']['field'] = 'currency';
+    $this->gf_stock_region_prices = _gf_stock_get_region_price_map();
   }
+
 
   /**
    * {@inheritdoc}
@@ -66,6 +68,23 @@ trait gf_stock_region_price_trait {
     parent::options_form($form, $form_state);
   }
 
+  public function gf_stock_get_region_name() {
+    $region = $this->options['gf_stock_region_price'];
+    return $this->gf_stock_region_prices[$region];
+  }
 
+  // public function label() {
+  //   if (!isset($this->options['label'])) {
+  //     return '';
+  //   }
+  //   $region = $this->gf_stock_get_region_name();
+  //   return $this->options['label'] . " ($region)";
+  // }
+
+  public function get_value($values, $field = NULL) {
+    $value = parent::get_value($values);
+    $currency = $values->{$this->aliases['currency']};
+    return _gf_stock_convert_to_default_currency($value, $currency);
+  }
 
 }

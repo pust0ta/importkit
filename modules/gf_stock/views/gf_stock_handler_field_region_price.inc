@@ -9,8 +9,7 @@ class gf_stock_handler_field_region_price extends views_handler_field_numeric{
 
 
   public function admin_summary() {
-    $region = $this->options['gf_stock_region_price'];
-    return strtoupper($this->gf_stock_region_prices[$region]);
+    return strtoupper($this->gf_stock_get_region_name());
   }
 
 

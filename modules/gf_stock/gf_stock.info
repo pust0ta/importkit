@@ -9,3 +9,6 @@ files[] = views/gf_stock_handler_trait.inc
 files[] = views/gf_stock_handler_field_stock.inc
 files[] = views/gf_stock_handler_sort_stock.inc
 files[] = views/gf_stock_handler_filter_stock.inc
+
+
+files[] = views/gf_stock_handler_field_region_price.inc

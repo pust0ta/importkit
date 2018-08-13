@@ -33,3 +33,39 @@ trait gf_stock_handler_trait {
   }
 
 }
+
+trait gf_stock_region_price_trait {
+
+  public function construct() {
+    $this->gf_stock_region_prices = _gf_stock_get_region_price_map();
+    parent::construct();
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function option_definition() {
+    $options = parent::option_definition();
+    $options['gf_stock_region_price'] = [
+      'default' => '',
+    ];
+    return $options;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function options_form(&$form, &$form_state) {
+    $form['gf_stock_region_price'] = array(
+      '#type' => 'radios',
+      '#title' => t('Price Region'),
+      '#description' => t('Select a price region.'),
+      '#options' => $this->gf_stock_region_prices,
+      '#default_value' => $this->options['gf_stock_region_price'],
+    );
+    parent::options_form($form, $form_state);
+  }
+
+
+
+}

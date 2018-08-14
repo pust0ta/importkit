@@ -12,3 +12,4 @@ files[] = views/gf_stock_handler_filter_stock.inc
 
 
 files[] = views/gf_stock_handler_field_region_price.inc
+files[] = views/gf_stock_handler_filter_region_price.inc

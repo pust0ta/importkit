@@ -64,36 +64,19 @@ function gf_stock_views_data(){
       'title' => t('Product'),
     ],
   ];
-  // $data['gf_stock_prices']['price_id'] = array(
-  //   'title' => t('Price ID'),
-  //   'help' => t('A region price id(hash).'),
-  //   'field' => array(
-  //     'click sortable' => TRUE,
-  //   ),
-  //   'filter' => array(
-  //     'handler' => 'views_handler_filter_string',
-  //   ),
-  //   'sort' => array(
-  //     'handler' => 'views_handler_sort',
-  //   ),
-  //   'argument' => array(
-  //     'handler' => 'views_handler_argument_string',
-  //   ),
-  // );
   $data['gf_stock_prices']['price'] = [
     'title' => t('Region Price'),
     'help' => t('Price for a specific region.'),
     'field' => array(
-      // 'handler' => 'views_handler_field_numeric',
       'handler' => 'gf_stock_handler_field_region_price',
       'click sortable' => TRUE,
     ),
     'filter' => array(
-      'handler' => 'views_handler_filter_numeric',
+      'handler' => 'gf_stock_handler_filter_region_price',
     ),
-    'sort' => array(
-      'handler' => 'views_handler_sort',
-    ),
+    // 'sort' => array(
+    //   'handler' => 'views_handler_sort',
+    // ),
   ];
 
   return $data;

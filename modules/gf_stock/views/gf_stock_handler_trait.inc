@@ -58,6 +58,8 @@ trait gf_stock_region_price_trait {
    * {@inheritdoc}
    */
   public function options_form(&$form, &$form_state) {
+    // Поле выбора региона, цену которого будет отображать
+    // данное поле.
     $form['gf_stock_region_price'] = array(
       '#type' => 'radios',
       '#title' => t('Price Region'),
@@ -69,22 +71,16 @@ trait gf_stock_region_price_trait {
   }
 
   public function gf_stock_get_region_name() {
+    // Получаем имя выбранного региона (для отображения в настройках views).
     $region = $this->options['gf_stock_region_price'];
     return $this->gf_stock_region_prices[$region];
   }
 
-  // public function label() {
-  //   if (!isset($this->options['label'])) {
-  //     return '';
-  //   }
-  //   $region = $this->gf_stock_get_region_name();
-  //   return $this->options['label'] . " ($region)";
-  // }
-
   public function get_value($values, $field = NULL) {
     $value = parent::get_value($values);
     $currency = $values->{$this->aliases['currency']};
+    // Приводим значение, полученное из базы, к отображению
+    // в дефолтной валюте(выбранной в настройках модуля).
     return _gf_stock_convert_to_default_currency($value, $currency);
   }
-
 }

@@ -20,6 +20,8 @@ class gf_stock_handler_field_region_price extends views_handler_field_numeric{
     parent::query();
     $table = $this->ensure_my_table();
     $region = $this->options['gf_stock_region_price'];
+    // Добавляем условие для запроса: учитывать только
+    // выбранный регион.
     $this->query
         ->add_where($this->options['group'], db_or()
         ->condition($table . '.price_id', $region));

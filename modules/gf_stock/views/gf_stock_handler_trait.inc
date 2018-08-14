@@ -29,6 +29,12 @@ trait gf_stock_handler_trait {
       '#options' => $this->gf_stock_regions,
       '#default_value' => $this->options['gf_stock_region'],
     );
+    $form['gf_stock_region_from_session'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Stock Region from User Session'),
+      '#description' => t('Take a region from the user\'s session (if any).'),
+      '#default_value' => $this->options['gf_stock_region_from_session'],
+    );
     parent::options_form($form, $form_state);
   }
 

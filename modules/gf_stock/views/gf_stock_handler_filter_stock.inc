@@ -10,6 +10,17 @@ class gf_stock_handler_filter_stock extends views_handler_filter_numeric{
   /**
    * {@inheritdoc}
    */
+  public function option_definition() {
+    $options = parent::option_definition();
+    $options['gf_stock_region_from_session'] = [
+      'default' => FALSE,
+    ];
+    return $options;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
   public function admin_summary() {
     if ($this
       ->is_a_group()) {
@@ -19,6 +30,9 @@ class gf_stock_handler_filter_stock extends views_handler_filter_numeric{
       return t('exposed');
     }
     $output = strtoupper($this->options['gf_stock_region']) . ' ';
+    if ($this->options['gf_stock_region_from_session']) {
+      $output .= strtoupper(t('Or From Session')) . ' ';
+    }
 
     $options = $this
       ->operator_options('short');
@@ -38,12 +52,22 @@ class gf_stock_handler_filter_stock extends views_handler_filter_numeric{
   }
 
 
+  public function _gf_stock_get_region() {
+    if ($this->options['gf_stock_region_from_session']) {
+      $current_region = gf_stock_get_current_region();
+      if (in_array($current_region, array_keys($this->gf_stock_regions))) {
+        return $current_region;
+      }
+    }
+    return $this->options['gf_stock_region'];
+  }
+
   public function query() {
     $table_alias = $this->ensure_my_table();
     $params = $this->options['group_type'] != 'group' ?
       array('function' => $this->options['group_type']) : array();
     $nid = 'node.nid';
-    $region = $this->options['gf_stock_region'];
+    $region = $this->_gf_stock_get_region();
     $field_alias = $table_alias . '_region_stock_' . $region;
     $expression = "(SELECT SUM(stock) FROM {importkit_cml_stock} 
       WHERE nid = {$nid} AND region = '$region')";
@@ -92,7 +116,6 @@ class gf_stock_handler_filter_stock extends views_handler_filter_numeric{
    */
   function op_regex($expression) {
     $this->query->add_where_expression($this->options['group'], 
-      "$expression RLIKE :value",
-      [':value' => $this->value["value"]]);                              
+      "$expression RLIKE :value", [':value' => $this->value["value"]]);
   }
 }

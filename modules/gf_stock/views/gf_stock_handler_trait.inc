@@ -38,7 +38,7 @@ trait gf_stock_region_price_trait {
 
   public function construct() {
     parent::construct();
-    $this->additional_fields['currency']['field'] = 'currency';
+    // $this->additional_fields['currency']['field'] = 'currency';
     $this->gf_stock_region_prices = _gf_stock_get_region_price_map();
   }
 
@@ -76,11 +76,26 @@ trait gf_stock_region_price_trait {
     return $this->gf_stock_region_prices[$region];
   }
 
+  public function gf_stock_get_currency() {
+    // Хелпер. Получаем название валюты текущего региона.
+    // На данный момент используется для преобразования значения поля
+    // к значению в дефолтной валюте сайта.
+    switch ($this->gf_stock_get_region_name()) {
+    case GF_STOCK_REGION_RU:
+      return GF_STOCK_CURRENCY_RU;
+    case GF_STOCK_REGION_CN:
+      return GF_STOCK_CURRENCY_CN;
+    }
+    return FALSE;
+  }
+
   public function get_value($values, $field = NULL) {
     $value = parent::get_value($values);
-    $currency = $values->{$this->aliases['currency']};
-    // Приводим значение, полученное из базы, к отображению
-    // в дефолтной валюте(выбранной в настройках модуля).
-    return _gf_stock_convert_to_default_currency($value, $currency);
+    if ($currency = $this->gf_stock_get_currency()) {
+      // Приводим значение, полученное из базы, к отображению
+      // в дефолтной валюте(выбранной в настройках модуля).
+      return _gf_stock_convert_to_default_currency($value, $currency);
+    }
+    return $value;
   }
 }

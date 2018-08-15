@@ -71,12 +71,6 @@ function gf_stock_views_data(){
       'handler' => 'gf_stock_handler_field_region_price',
       'click sortable' => TRUE,
     ),
-    'filter' => array(
-      'handler' => 'gf_stock_handler_filter_region_price',
-    ),
-    // 'sort' => array(
-    //   'handler' => 'views_handler_sort',
-    // ),
   ];
 
   return $data;

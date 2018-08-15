@@ -63,8 +63,19 @@ function gf_stock_node_delete($node) {
  * Implements hook_importkit_stock().
  */
 function gf_stock_importkit_stock($entity, $xml_element){
+  $import_started = &drupal_static('gf_stock_import_started');
+
+  if (!$import_started) {
+    // Удаляем текущие данные по остаткам в начале импорта.
+    db_truncate('gf_stock_stocks')->execute();
+    $import_started = TRUE;
+  }
+
   // Обновляем при импорте данные по остаткам в регионах.
   foreach($xml_element->Остатки->ОстаткиСклада as $element) {
+    // Запись в таблицу importkit_cml_stock оставляем на
+    // случай ее использования другими неведомыми модулями.
+    // В нашем она будет нафиг не нужна.
     db_merge('importkit_cml_stock')->key(array(
       'guid1' => $entity->guid1,
       'guid2' => $entity->guid2,
@@ -75,6 +86,19 @@ function gf_stock_importkit_stock($entity, $xml_element){
       'warehouse' => (string) $element->ИдСклада,
       'region' => (string) $element->Регион,
     ))->execute();
+
+    // Запись непосредственно в таблицу, которая будет
+    // использоваться в дальнейшем для отображения остатков по регионам.
+    db_merge('gf_stock_stocks')
+      ->key(array(
+        'nid' => $entity->nid,
+        'region' => $element->Регион,
+      ))
+      ->fields(array(
+          'stock' => $element->Остаток,
+      ))
+      ->expression('stock', 'stock + :inc', array(':inc' => $element->Остаток))
+      ->execute();
 
   }
 }
@@ -87,21 +111,14 @@ function gf_stock_node_load($nodes, $types){
   if (!count(array_intersect(uc_product_types(), $types))) return;
 
   $result = db_query("SELECT nid, stock, region
-    FROM {importkit_cml_stock}
-    WHERE nid IN(:nids)
-    AND region<>''", array(':nids' => array_keys($nodes),));
+    FROM {gf_stock_stocks}
+    WHERE nid IN(:nids)", array(':nids' => array_keys($nodes),));
 
   // Добавляем при загрузке нод-товаров поля с данными
   // по остаткам в регионах.
   foreach ($result as $record) {
-    $stock = (int) $record->stock;
     // Складываем суммы остатков в конкретном регионе для разных представлений.
-    if (isset($nodes[$record->nid]->gf_region_stock[$record->region])) {
-      $nodes[$record->nid]->gf_region_stock[$record->region] += $stock;
-    }
-    else{
-      $nodes[$record->nid]->gf_region_stock[$record->region] = $stock;
-    }
+    $nodes[$record->nid]->gf_region_stock[$record->region] = (int) $record->stock;
   }
 
   $prices = db_select('gf_stock_prices', 'p')

@@ -2,6 +2,33 @@
 
 function gf_stock_schema() {
   $schema = array();
+  $schema['gf_stock_stocks'] = array(
+    'description' => 'Stores cml and associated data with node.',
+    'fields' => array(
+      'nid' => array(
+        'description' => 'Node ID of a product.',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'region' => array(
+        'description' => 'Warehouse region.',
+        'type' => 'varchar',
+        'length' => 50,
+        'not null' => true,
+        'default' => '',
+      ),
+      'stock' => array(
+        'description' => 'Quantity in stock.',
+        'type' => 'int',
+        'size' => 'medium',
+        'not null' => TRUE,
+        'default' => 0,
+      ),),
+    'primary key' => array('nid', 'region'),
+  );
+
   $schema['gf_stock_prices'] = array(
     'description' => 'Table for storing prices for different regions.',
     'fields' => array(
@@ -58,4 +85,14 @@ function gf_stock_update_7001() {
   $schema = gf_stock_schema();
   if(!db_table_exists('gf_stock_price'))
     db_create_table('gf_stock_prices', $schema['gf_stock_prices']);
+}
+
+/**
+ * Implements hook_update_N().
+ * Добавляем свою таблицу с остатками по регионам.
+ */
+function gf_stock_update_7002() {
+  $schema = gf_stock_schema();
+  if(!db_table_exists('gf_stock_stocks'))
+    db_create_table('gf_stock_stocks', $schema['gf_stock_stocks']);
 }

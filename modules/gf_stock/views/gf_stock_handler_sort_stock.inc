@@ -31,12 +31,13 @@ class gf_stock_handler_sort_stock extends views_handler_sort{
    * {@inheritdoc}
    */
   public function query() {
-    $table_alias = $this->ensure_my_table();
+    $this->ensure_my_table();
     $nid = 'node.nid';
     $region = $this->options['gf_stock_region'];
-    $expression = "(SELECT SUM(stock) FROM {importkit_cml_stock} ics
-      WHERE ics.nid = {$nid} AND ics.region = '$region')";
+    $expression = "(SELECT stock FROM {$this->table_alias} 
+      WHERE nid = {$nid} AND region = '$region')";
+
     $this->query->add_orderby(NULL, 
-      $expression, $this->options['order'], $table_alias . '_region_stock_' . $region);
+      $expression, $this->options['order'], $this->table_alias . '_region_stock_' . $region);
   }
 }

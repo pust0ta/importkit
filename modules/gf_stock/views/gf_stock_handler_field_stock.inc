@@ -17,15 +17,13 @@ class gf_stock_handler_field_stock extends views_handler_field_numeric{
    * {@inheritdoc}
    */
   public function query() {
-    $table_alias = $this->ensure_my_table();
-    $params = $this->options['group_type'] != 'group' ?
-      array('function' => $this->options['group_type']) : array();
+    $this->ensure_my_table();
     $nid = 'node.nid';
     $region = $this->options['gf_stock_region'];
-    $expression = "(SELECT SUM(stock) FROM {importkit_cml_stock} ics
-      WHERE ics.nid = {$nid} AND ics.region = '$region')";
+    $expression = "(SELECT stock FROM {$this->table_alias} 
+      WHERE nid = {$nid} AND region = '$region')";
     $this->field_alias = $this->query->add_field(NULL, 
-      $expression, $table_alias . '_region_stock_' . $region, $params);
+      $expression, $this->table_alias . '_region_stock_' . $region);
     $this->add_additional_fields();
   }
 }

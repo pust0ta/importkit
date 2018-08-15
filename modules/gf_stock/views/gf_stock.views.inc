@@ -4,18 +4,18 @@
  * Implements hook_views_data().
  */
 function gf_stock_views_data(){
-  $data['importkit_cml_stock']['table']['group'] = t('GF Stock');
-  $data['importkit_cml_stock']['table']['base'] = [
+  $data['gf_stock_stocks']['table']['group'] = t('GF Stock');
+  $data['gf_stock_stocks']['table']['base'] = [
     'field' => 'nid',
     'title' => t('Product nid'),
   ];
-    $data['importkit_cml_stock']['table']['join'] = array(
+    $data['gf_stock_stocks']['table']['join'] = array(
     'node' => array(
       'left_field' => 'nid',
       'field' => 'nid',
     ),
   );
-  $data['importkit_cml_stock']['nid'] = [
+  $data['gf_stock_stocks']['nid'] = [
     'title' => t('Product Node Nid'),
     'help' => t('Product Node identifier.'),
     'relationship' => [
@@ -26,7 +26,7 @@ function gf_stock_views_data(){
       'title' => t('Product'),
     ],
   ];
-  $data['importkit_cml_stock']['stock'] = [
+  $data['gf_stock_stocks']['stock'] = [
     'title' => t('Region Stock'),
     'help' => t('Stock data for the Region'),
     'field' => [

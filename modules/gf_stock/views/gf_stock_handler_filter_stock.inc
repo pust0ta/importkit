@@ -12,10 +12,34 @@ class gf_stock_handler_filter_stock extends views_handler_filter_numeric{
    */
   public function option_definition() {
     $options = parent::option_definition();
+    $options['gf_stock_region'] = [
+      'default' => $this->gf_stock_regions[GF_STOCK_REGION_RU],
+    ];
     $options['gf_stock_region_from_session'] = [
       'default' => FALSE,
     ];
     return $options;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function options_form(&$form, &$form_state) {
+    $regions = 
+    $form['gf_stock_region'] = array(
+      '#type' => 'radios',
+      '#title' => t('Stock Region'),
+      '#description' => t('Select the region to display stock.'),
+      '#options' => $this->gf_stock_regions,
+      '#default_value' => $this->options['gf_stock_region'],
+    );
+    $form['gf_stock_region_from_session'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Stock Region from User Session'),
+      '#description' => t('Take a region from the user\'s session (if any).'),
+      '#default_value' => $this->options['gf_stock_region_from_session'],
+    );
+    parent::options_form($form, $form_state);
   }
 
   /**
@@ -63,19 +87,16 @@ class gf_stock_handler_filter_stock extends views_handler_filter_numeric{
   }
 
   public function query() {
-    $table_alias = $this->ensure_my_table();
-    $params = $this->options['group_type'] != 'group' ?
-      array('function' => $this->options['group_type']) : array();
+    $this->ensure_my_table();
     $nid = 'node.nid';
     $region = $this->_gf_stock_get_region();
-    $field_alias = $table_alias . '_region_stock_' . $region;
-    $expression = "(SELECT SUM(stock) FROM {importkit_cml_stock} 
+    $expression = "(SELECT stock FROM {$this->table_alias} 
       WHERE nid = {$nid} AND region = '$region')";
 
     $info = $this->operators();
-        if (!empty($info[$this->operator]['method'])) {
-          $this->{$info[$this->operator]['method']}($expression);
-        }
+    if (!empty($info[$this->operator]['method'])) {
+      $this->{$info[$this->operator]['method']}($expression);
+    }
   }
 
 

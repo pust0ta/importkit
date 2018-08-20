@@ -419,3 +419,47 @@ function gf_stock_cron() {
     gf_stock_update_yuan_exchange_rate();
   }
 }
+
+
+/**
+ * Implements hook_uc_cart_alter().
+ *
+ * Правим цену в корзине в соответствии с регионом заказа
+ */
+function gf_stock_uc_cart_alter(&$items) {
+  $region_stock = FALSE;
+  foreach ($items as $key => $item) {
+    $item->cost = $item->price;
+    if ($region_stock == FALSE and $item->data["region_stock"]) {
+      $region_stock = $item->data["region_stock"];
+    }
+    if ($region_stock == "Russia") {
+      $item->price = $item->gf_region_prices["Russia"];
+    } elseif ($region_stock == "China") {
+      $item->price = round($item->gf_region_prices["China"]);
+    }
+  }
+}
+
+
+/**
+ * Implements hook_uc_add_to_cart_data().
+ */
+function gf_stock_uc_add_to_cart_data($form_values) {
+  if (isset($form_values['nid'])) {
+    $node = node_load($form_values['nid']);
+    return array(
+      'shippable' => isset($node->shippable) ? $node->shippable : variable_get('uc_product_shippable_' . $node->type, 1),
+      'type' => $node->type,
+      'region_stock' => $_SESSION['gf_stock_region'],
+    );
+  }
+  else {
+    return array(
+      'shippable' => variable_get('uc_product_shippable_product', 1),
+      'type' => 'product',
+      'region_stock' => $_SESSION['gf_stock_region'],
+    );
+  }
+}
+

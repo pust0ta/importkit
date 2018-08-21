@@ -249,7 +249,7 @@ function gf_stock_block_contents($block) {
       'html' => true,
     ];
 
-    $regions[GF_STOCK_REGION_ALL] = l(t('All'), $region_switch_path, $link_options);
+    //$regions[GF_STOCK_REGION_ALL] = l(t('All'), $region_switch_path, $link_options);
 
     foreach(array_keys(gf_stock_get_regions()) as $region) {
       $regions[$region] = l(t($region), $region_switch_path . '/' . $region, $link_options);

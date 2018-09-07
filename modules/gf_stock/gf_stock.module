@@ -446,12 +446,11 @@ function gf_stock_uc_cart_alter(&$items) {
     }
 
     if ($discount) {
-      $discount_coefficient = 1.0 - $discount_percent / 100;
-      $item->cost = $item->price;
-
       if ($extra_10) {
         $discount_percent += 10;
       }
+      $discount_coefficient = 1.0 - $discount_percent / 100;
+      $item->cost = $item->price;
 
       if ($region_stock == "Russia") {
         $item->price = $item->gf_region_prices["Russia"] * $discount_coefficient;

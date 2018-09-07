@@ -428,15 +428,58 @@ function gf_stock_cron() {
  */
 function gf_stock_uc_cart_alter(&$items) {
   $region_stock = FALSE;
+  if (user_has_role(18) or user_has_role(19)) { $extra_10 = true; }
+
   foreach ($items as $key => $item) {
-    $item->cost = $item->price;
+    $discount = FALSE;
+
+    if (isset($item->field_discount['und'])) {
+      $field_discount_tid = $item->field_discount['und'][0]['tid'];
+      $discount_term = taxonomy_term_load($field_discount_tid);
+      $discount_raw_percent = $discount_term->name;
+      $discount_percent = substr($discount_raw_percent, 0, strpos($discount_raw_percent, '%'));
+      $discount = TRUE;
+    }
+
     if ($region_stock == FALSE and $item->data["region_stock"]) {
       $region_stock = $item->data["region_stock"];
     }
-    if ($region_stock == "Russia") {
-      $item->price = $item->gf_region_prices["Russia"];
-    } elseif ($region_stock == "China") {
-      $item->price = round($item->gf_region_prices["China"]);
+
+    if ($discount) {
+      $discount_coefficient = 1.0 - $discount_percent / 100;
+      $item->cost = $item->price;
+
+      if ($extra_10) {
+        $discount_percent += 10;
+      }
+
+      if ($region_stock == "Russia") {
+        $item->price = $item->gf_region_prices["Russia"] * $discount_coefficient;
+        $item->sell_price = $item->price;
+      } elseif ($region_stock == "China") {
+        $item->price = $item->gf_region_prices["China"] * $discount_coefficient;
+        $item->sell_price = $item->price;
+      }
+    } elseif ($extra_10) {
+      if ($region_stock == "Russia") {
+        $discount_coefficient = 1.0 - 10 / 100;
+        $item->price = $item->gf_region_prices["Russia"] * $discount_coefficient;
+        $item->sell_price = $item->price;
+      }
+      elseif ($region_stock == "China") {
+        $discount_coefficient = 1.0 - 10 / 100;
+        $item->price = $item->gf_region_prices["China"] * $discount_coefficient;
+        $item->sell_price = $item->price;
+      }
+    } else {
+      $item->cost = $item->price;
+
+      if ($region_stock == "Russia") {
+        $item->price = $item->gf_region_prices["Russia"];
+      }
+      elseif ($region_stock == "China") {
+        $item->price = round($item->gf_region_prices["China"]);
+      }
     }
   }
 }

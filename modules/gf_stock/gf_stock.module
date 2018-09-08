@@ -384,8 +384,9 @@ function gf_stock_views_api() {
 function _gf_stock_get_yuan_exchange_rate() {
   $url_json = 'https://www.cbr-xml-daily.ru/daily_json.js';
   try {
-    $data = json_decode(file_get_contents($url_json)); 
-    $rate = ($data->Valute->CNY->Value / 10);
+    $data = json_decode(file_get_contents($url_json));
+    $nominal = $data->Valute->CNY->Nominal;
+    $rate = ($data->Valute->CNY->Value / (int)$nominal);
     $date = $data->Date;
   } catch(Exception $e) {
     watchdog('gf_stock', $e->getMessage(), array(), WATCHDOG_ERROR);

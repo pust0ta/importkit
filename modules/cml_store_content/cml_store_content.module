@@ -855,6 +855,10 @@ function cml_store_content_create_node_ubercart($params)
 
   $node->model = $sku;
 
+  // Штрихкод
+  $barcode = importkit_tutf($element->Штрихкод);
+  $node->field_barcode['und'][0]['value'] = $barcode;
+
   // Настройка ноды
   $node->changed = time();
   $node->status = true; // Вкл/Откл ноду
@@ -963,6 +967,19 @@ function cml_store_content_create_node_ubercart($params)
 
     }
 
+    (redirect_load_by_source('ean/' . $barcode)) ? $ean_redirect_exists = TRUE : $ean_redirect_exists = FALSE;
+
+    if($ean_redirect_exists == FALSE) {
+      $ean_path = array(
+        'source' => 'ean/' .$barcode,
+        'redirect' => 'node/' . $node->nid,
+      );
+      // Make redirects for new paths.
+      $redirect = new stdClass();
+      redirect_object_prepare($redirect, $ean_path);
+      redirect_save($redirect);
+    }
+
     // Сохраняем продукт
     node_save($node);
 
@@ -979,6 +996,10 @@ function cml_store_content_update_node_ubercart($params)
   // TODO 9: реализовать привязку и добавление атрибутов
 
   $attributes = array();
+
+  $barcode = importkit_tutf($element->Штрихкод);
+  $node->field_barcode['und'][0]['value'] = $barcode;
+
   $rows = db_select('uc_attributes', 'a')->fields('a')->execute();
   foreach ($rows as $row) {
     $attributes[$row->aid] = $row;

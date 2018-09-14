@@ -491,18 +491,37 @@ function gf_stock_uc_cart_alter(&$items) {
 function gf_stock_uc_add_to_cart_data($form_values) {
   if (isset($form_values['nid'])) {
     $node = node_load($form_values['nid']);
-    return array(
+    $output = array(
       'shippable' => isset($node->shippable) ? $node->shippable : variable_get('uc_product_shippable_' . $node->type, 1),
       'type' => $node->type,
-      'region_stock' => $_SESSION['gf_stock_region'],
     );
   }
   else {
-    return array(
+    $output = array(
       'shippable' => variable_get('uc_product_shippable_product', 1),
       'type' => 'product',
-      'region_stock' => $_SESSION['gf_stock_region'],
     );
   }
+
+  $output['region_stock'] = gf_stock_get_current_region();
+  return $output;
 }
 
+
+/**
+ * Implements hook_uc_checkout_complete().
+ */
+function gf_stock_uc_checkout_complete($order, $account) {
+  // Декрементим количество в стоках на основе заказанного.
+  foreach ($order->products as $pid=>$data) {
+    try {
+      db_update('gf_stock_stocks')
+        ->expression('stock', 'stock - :qty', array(':qty' => $data->qty))
+        ->condition('nid', $data->nid)
+        ->condition('region', $data->data['region_stock'])
+        ->execute();
+    } catch(Exception $e) {
+      watchdog('gf_stock', $e->getMessage(), array(), WATCHDOG_ERROR);
+    }
+  }
+}

@@ -23,7 +23,7 @@ function cml_store_order_create_orders($params) {
 
   $last_name = $order->delivery_last_name;
   $first_name = $order->delivery_first_name;
-  $phone = $account->field_telephone['und'][0]['safe_value'];
+  $phone = $account->field_telefon['und'][0]['safe_value'];
   $delivery_phone = $order->delivery_phone;
   $email = $order->primary_email;
   $country_id = $order->delivery_country;

@@ -6,6 +6,7 @@ dependencies[] = importkit
 dependencies[] = cml_store_content
 dependencies[] = cml_store_price
 dependencies[] = node
+dependencies[] = uc_addresses
 
 version = "7.x-0.10-dev"
 core = "7.x"

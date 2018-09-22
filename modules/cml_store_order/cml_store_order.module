@@ -15,15 +15,52 @@ function cml_store_order_importkit_info()
  * @param mixed $op
  * @param mixed $orders
  */
-function cml_store_order_create_orders($params)
-{
-    global $user;
+function cml_store_order_create_orders($params) {
+  global $user;
 
-    extract($params);
+  extract($params);
+  $account = user_load($order->uid);
 
-    // создание файла ордера
-    $timechange = time();
-    $no_spaces = '<?xml version="1.0" encoding="windows-1251"?>
+  $last_name = $order->delivery_last_name;
+  $first_name = $order->delivery_first_name;
+  $phone = $account->field_telephone['und'][0]['safe_value'];
+  $delivery_phone = $order->delivery_phone;
+  $email = $order->primary_email;
+  $country_id = $order->delivery_country;
+  $region_id = $order->delivery_zone;
+  $city = $order->delivery_city;
+  $street1 = $order->delivery_street1;
+  $street2 = $order->delivery_street2;
+  $postal_code = $order->delivery_postal_code;
+  $cargo_company = '';
+
+  $FIO = $last_name . " " . $first_name;
+  if (!trim($FIO)) {
+    $FIO = $account->name;
+  }
+  if ($order->delivery_company != '') {
+    $buyer = $order->delivery_company;
+  } else {
+    $buyer = $FIO;
+  }
+
+  foreach ($account->roles as $rid=>$role) {
+    if ($rid != '2') {
+      if ($role == "Оптовый клиент") {
+        $comments .= ' Клиент с "Садовода"';
+      } else {
+        $comments .= ' ' . $role;
+      }
+    }
+  }
+
+
+  $delvery_address_full = $city . ' ' . $street1 . ' ' . $street2 . ' ' . $FIO;
+
+
+  // создание файла ордера
+  $timechange = time();
+  $no_spaces = '<?xml version="1.0" encoding="windows-1251"?>
 	<КоммерческаяИнформация ВерсияСхемы="2.05"
 		ДатаФормирования="' . date('Y-m-d', $timechange) . 'T' . date('H:m:s', $timechange) . '"
 		ФорматДаты="ДФ=yyyy-MM-dd; ДЛФ=DT"
@@ -55,17 +92,11 @@ function cml_store_order_create_orders($params)
     $k = $doc->addChild('Контрагенты');
     $_k = $k->addChild('Контрагент');
 
-    $accaunt = user_load($order->uid);
+    $_k->addChild("Ид", "{$account->uid}#{$account->name}#");
 
-    $_k->addChild("Ид", "{$accaunt->uid}#{$accaunt->name}#");
-
-    $FIO = $last_name . " " . $first_name . " " . $patronymic_name;
-    if (!trim($FIO)) {
-        $FIO = $accaunt->name;
-    }
-    $_k->addChild("Наименование", $FIO);
+    $_k->addChild("Наименование", $buyer);
     $_k->addChild("Роль", 'Покупатель');
-    $_k->addChild("ПолноеНаименование", $FIO);
+    $_k->addChild("ПолноеНаименование", $buyer);
     $_k->addChild("Фамилия", $last_name);
     $_k->addChild("Имя", $first_name);
 

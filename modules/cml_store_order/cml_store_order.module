@@ -34,6 +34,19 @@ function cml_store_order_create_orders($params) {
   $postal_code = $order->delivery_postal_code;
   $cargo_company = $order->uc_addresses['shipping']->getField('ucxf_cargo_company');
 
+  $region_name = db_select('uc_zones')
+    ->condition('zone_id', $region_id)
+    ->fields('uc_zones', ['zone_name'])
+    ->execute()
+    ->fetchField();
+
+  $country_name = db_select('uc_countries')
+    ->condition('country_id', $country_id)
+    ->fields('uc_countries', ['country_name'])
+    ->execute()
+    ->fetchField();
+  $country_name = t($country_name);
+
   if ($last_name) {
     $FIO = $last_name . " " . $first_name;
   } else {
@@ -72,7 +85,21 @@ function cml_store_order_create_orders($params) {
   }
 
   $delivery_address_full = FALSE;
-  if ($city) { $delivery_address_full .= $city; }
+  $region_with_city = FALSE;
+  if ($region_name) {
+    $delivery_address_full = $region_name;
+    $region_with_city = $region_name;
+  }
+  if ($city) {
+    if ($delivery_address_full) {
+      $delivery_address_full .= ', ';
+    }
+    if ($region_with_city) {
+      $region_with_city .= ', ';
+    }
+    $delivery_address_full .= $city;
+    $region_with_city .= $city;
+  }
   if ($street1) {
     if ($delivery_address_full) {
       $delivery_address_full .= ', ';
@@ -85,6 +112,7 @@ function cml_store_order_create_orders($params) {
     }
     $delivery_address_full .= ', ';
   }
+
 
 
   // создание файла ордера
@@ -136,13 +164,13 @@ function cml_store_order_create_orders($params) {
     $_k2->addChild('Значение', $postal_code);
     $_k2 = $_k1->addChild('АдресноеПоле');
     $_k2->addChild('Тип', 'Страна');
-    $_k2->addChild('Значение', '');
+    $_k2->addChild('Значение', $country_name);
     $_k2 = $_k1->addChild('АдресноеПоле');
     $_k2->addChild('Тип', 'Город');
     $_k2->addChild('Значение', $city);
     $_k2 = $_k1->addChild('АдресноеПоле');
-    $_k2->addChild('Тип', 'Транспортная компания');
-    $_k2->addChild('Значение', $cargo_company);
+    $_k2->addChild('Тип', 'Регион');
+    $_k2->addChild('Значение', $region_with_city);
 
     $_k1 = $_k->addChild('Контакты');
     $_k2 = $_k1->addChild('Контакт');
@@ -224,7 +252,7 @@ function cml_store_order_create_orders($params) {
 
         $t2 = $t1->addChild('ЗначениеРеквизита');
         $t2->addChild('Наименование', 'Способ доставки');
-        $t2->addChild('Значение', $shipping['title']);
+        $t2->addChild('Значение', $shipping);
     }
 
     $t2 = $t1->addChild('ЗначениеРеквизита');
@@ -375,7 +403,7 @@ function cml_store_order_uc_order($op, $order, $edit = array())
               'payment_received' => $payment_received,
               'payment_receipt_id' => $payment_receipt_id,
               'payment_method' => $payment_method,
-              'shipping' => $shipping,
+              'shipping' => $shipping['title'],
               'phone' => '',
               'products' => $products,
 

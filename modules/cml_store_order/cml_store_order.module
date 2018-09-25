@@ -165,6 +165,9 @@ function cml_store_order_create_orders($params) {
     $_k2 = $_k1->addChild('АдресноеПоле');
     $_k2->addChild('Тип', 'Страна');
     $_k2->addChild('Значение', $country_name);
+  $_k2 = $_k1->addChild('АдресноеПоле');
+  $_k2->addChild('Тип', 'Регион');
+  $_k2->addChild('Значение', $region_name);
     $_k2 = $_k1->addChild('АдресноеПоле');
     $_k2->addChild('Тип', 'Город');
     $_k2->addChild('Значение', $city);
@@ -253,6 +256,13 @@ function cml_store_order_create_orders($params) {
         $t2 = $t1->addChild('ЗначениеРеквизита');
         $t2->addChild('Наименование', 'Способ доставки');
         $t2->addChild('Значение', $shipping);
+    }
+
+    //Транспортная компания
+    if ($cargo_company) {
+      $t2 = $t1->addChild('ЗначениеРеквизита');
+      $t2->addChild('Наименование', 'Транспортная компания');
+      $t2->addChild('Значение', $cargo_company);
     }
 
     $t2 = $t1->addChild('ЗначениеРеквизита');

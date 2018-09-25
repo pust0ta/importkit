@@ -49,6 +49,12 @@ function cml_store_order_create_orders($params) {
     $buyer = $FIO;
   }
 
+  /**
+   * Получение информации о менеджере
+   */
+  $manager_nid = node_load($account->field_manager["und"][0]["target_id"]);
+  $manager = $manager_nid->title;
+
   foreach ($account->roles as $rid=>$role) {
     if ($rid != '2') {
       if ($role == "Оптовый клиент") {
@@ -61,9 +67,24 @@ function cml_store_order_create_orders($params) {
   if ($cargo_company) {
     $comments .= '. ТК:' . $cargo_company;
   }
+  if ($manager) {
+    $comments .= '. Менеджер:' . $manager;
+  }
 
-
-  $delvery_address_full = $city . ' ' . $street1 . ' ' . $street2 . ' ' . $FIO;
+  $delivery_address_full = FALSE;
+  if ($city) { $delivery_address_full .= $city; }
+  if ($street1) {
+    if ($delivery_address_full) {
+      $delivery_address_full .= ', ';
+    }
+    $delivery_address_full .= $street1;
+  }
+  if ($street2) {
+    if ($delivery_address_full) {
+      $delivery_address_full .= ', ';
+    }
+    $delivery_address_full .= ', ';
+  }
 
 
   // создание файла ордера
@@ -109,7 +130,7 @@ function cml_store_order_create_orders($params) {
     $_k->addChild("Имя", $first_name);
 
     $_k1 = $_k->addChild('АдресРегистрации');
-    $_k2 = $_k1->addChild('Представление', $street1 . ' ' . $street2);
+    $_k2 = $_k1->addChild('Представление', $delivery_address_full);
     $_k2 = $_k1->addChild('АдресноеПоле');
     $_k2->addChild('Тип', 'Почтовый индекс');
     $_k2->addChild('Значение', $postal_code);
@@ -225,7 +246,7 @@ function cml_store_order_create_orders($params) {
 
     $t2 = $t1->addChild('ЗначениеРеквизита');
     $t2->addChild('Наименование', 'Сайт');
-    $t2->addChild('Значение', 'Giorgio-Ferretti.it');
+    $t2->addChild('Значение', '.it');
 
     $body = $xml->asXML();
 
@@ -318,7 +339,7 @@ function cml_store_order_uc_order($op, $order, $edit = array())
                         break;
                     }
                 }
-                if ($shipping and $shipping['amount'] > 0) {
+                if ($shipping) {
                     $product = (object) array(
                       'title' => $shipping['title'],
                       'price' => $shipping['amount'],

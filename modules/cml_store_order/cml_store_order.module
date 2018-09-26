@@ -56,8 +56,8 @@ function cml_store_order_create_orders($params) {
   if (!trim($FIO)) {
     $FIO = $account->name;
   }
-  if ($order->delivery_company != '') {
-    $buyer = $order->delivery_company;
+  if ($account->field_kompaniya["und"][0]["safe_value"] != '') {
+    $buyer = $account->field_kompaniya["und"][0]["safe_value"];
   } else {
     $buyer = $FIO;
   }
@@ -66,7 +66,7 @@ function cml_store_order_create_orders($params) {
    * Получение информации о менеджере
    */
   $manager_nid = node_load($account->field_manager["und"][0]["target_id"]);
-  $manager = $manager_nid->title;
+  $manager = $manager_nid->field_code_1c["und"][0]["safe_value"];
 
   foreach ($account->roles as $rid=>$role) {
     if ($rid != '2') {
@@ -85,20 +85,20 @@ function cml_store_order_create_orders($params) {
   }
 
   $delivery_address_full = FALSE;
-  $region_with_city = FALSE;
+  if ($country_name) {
+    $delivery_address_full = $country_name;
+  }
   if ($region_name) {
-    $delivery_address_full = $region_name;
-    $region_with_city = $region_name;
+    if ($delivery_address_full) {
+      $delivery_address_full .= ', ';
+    }
+    $delivery_address_full .= $region_name;
   }
   if ($city) {
     if ($delivery_address_full) {
       $delivery_address_full .= ', ';
     }
-    if ($region_with_city) {
-      $region_with_city .= ', ';
-    }
     $delivery_address_full .= $city;
-    $region_with_city .= $city;
   }
   if ($street1) {
     if ($delivery_address_full) {
@@ -110,7 +110,7 @@ function cml_store_order_create_orders($params) {
     if ($delivery_address_full) {
       $delivery_address_full .= ', ';
     }
-    $delivery_address_full .= ', ';
+    $delivery_address_full .= $street2;
   }
 
 
@@ -165,16 +165,16 @@ function cml_store_order_create_orders($params) {
     $_k2 = $_k1->addChild('АдресноеПоле');
     $_k2->addChild('Тип', 'Страна');
     $_k2->addChild('Значение', $country_name);
-  $_k2 = $_k1->addChild('АдресноеПоле');
-  $_k2->addChild('Тип', 'Регион');
-  $_k2->addChild('Значение', $region_name);
+    $_k2 = $_k1->addChild('АдресноеПоле');
+    $_k2->addChild('Тип', 'Регион');
+    $_k2->addChild('Значение', $region_name);
     $_k2 = $_k1->addChild('АдресноеПоле');
     $_k2->addChild('Тип', 'Город');
     $_k2->addChild('Значение', $city);
     $_k2 = $_k1->addChild('АдресноеПоле');
-    $_k2->addChild('Тип', 'Регион');
-    $_k2->addChild('Значение', $region_with_city);
-
+    $_k2->addChild('Тип', 'Адрес');
+    $_k2->addChild('Значение', $street1);
+    $_k2 = $_k1->addChild('АдресноеПоле');
     $_k1 = $_k->addChild('Контакты');
     $_k2 = $_k1->addChild('Контакт');
     $_k2->addChild('Тип', 'Почта');
@@ -264,6 +264,13 @@ function cml_store_order_create_orders($params) {
       $t2->addChild('Наименование', 'Транспортная компания');
       $t2->addChild('Значение', $cargo_company);
     }
+
+    //Менеджер
+  if ($manager) {
+    $t2 = $t1->addChild('ЗначениеРеквизита');
+    $t2->addChild('Наименование', 'Менеджер');
+    $t2->addChild('Значение', $manager);
+  }
 
     $t2 = $t1->addChild('ЗначениеРеквизита');
     $t2->addChild('Наименование', 'Отменен');

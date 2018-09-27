@@ -34,6 +34,25 @@ function cml_store_order_create_orders($params) {
   $postal_code = $order->delivery_postal_code;
   $cargo_company = $order->uc_addresses['shipping']->getField('ucxf_cargo_company');
 
+  $inn = $account->field_vat_id["und"][0]["safe_value"];
+  $ogrn = $account->field_ogrn["und"][0]["safe_value"];
+  $kpp = $account->field_kpp["und"][0]["safe_value"];
+  $bank_name = $account->field_bank_name["und"][0]["safe_value"];
+  $bank_account = $account->field_bank_account_number["und"][0]["safe_value"];
+  $bik = $account->field_bik["und"][0]["value"];
+  $kor_acc = $account->field_correspondent_acc["und"][0]["safe_value"];
+  $bank_inn = $account->field_bank_inn["und"][0]["value"];
+  $bank_kpp = $account->field_bank_kpp["und"][0]["value"];
+
+  $is_org = FALSE;
+  $is_personal = FALSE;
+
+  if (strlen($inn) <= 11) {
+    $is_org = TRUE;
+  } elseif (strlen($inn) > 11) {
+    $is_personal = TRUE;
+  }
+
   $region_name = db_select('uc_zones')
     ->condition('zone_id', $region_id)
     ->fields('uc_zones', ['zone_name'])
@@ -156,6 +175,24 @@ function cml_store_order_create_orders($params) {
     $_k->addChild("ПолноеНаименование", $buyer);
     $_k->addChild("Фамилия", $last_name);
     $_k->addChild("Имя", $first_name);
+
+    //Реквизиты контрагента
+    $_r = $_k->addChild('РеквизитыКонтрагента');
+    if ($is_personal) {
+      $_r->addChild('ТипКонтрагента', 'Физическое лицо');
+    } elseif ($is_org) {
+      $_r->addChild('ТипКонтрагента', 'Юридическое лицо');
+    }
+    $_r->addChild('ИНН', $inn);
+    $_r->addChild('ОГРН', $ogrn);
+    $_r->addChild('КПП', $kpp);
+    $_r1 = $_r->addChild('БанковскиеРеквизиты');
+    $_r1->addChild('НомерСчёта', $bank_account);
+    $_r1->addChild('НаименованиеБанка', $bank_name);
+    $_r1->addChild('БИК', $bik);
+    $_r1->addChild('ИННБанка', $bank_inn);
+    $_r1->addChild('КППБанка', $bank_kpp);
+    $_r1->addChild('КорСчёт', $kor_acc);
 
     $_k1 = $_k->addChild('АдресРегистрации');
     $_k2 = $_k1->addChild('Представление', $delivery_address_full);

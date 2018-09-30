@@ -21,17 +21,24 @@ function cml_store_order_create_orders($params) {
   extract($params);
   $account = user_load($order->uid);
 
-  $last_name = $order->delivery_last_name;
-  $first_name = $order->delivery_first_name;
+  $delivery_last_name = $order->delivery_last_name;
+  $reg_last_name = $account->field_last_name["und"][0]["safe_value"];
+  $delivery_first_name = $order->delivery_first_name;
+  $reg_first_name = $account->field_first_name["und"][0]["safe_value"];
   $phone = $account->field_telefon['und'][0]['safe_value'];
   $delivery_phone = $order->delivery_phone;
   $email = $order->primary_email;
-  $country_id = $order->delivery_country;
-  $region_id = $order->delivery_zone;
-  $city = $order->delivery_city;
-  $street1 = $order->delivery_street1;
-  $street2 = $order->delivery_street2;
-  $postal_code = $order->delivery_postal_code;
+  $delivery_country_id = $order->delivery_country;
+  $delivery_company = $order->delivery_company;
+  $delivery_region_id = $order->delivery_zone;
+  $reg_region = $account->field_region["und"][0]["safe_value"];
+  $delivery_city = $order->delivery_city;
+  $reg_city = $account->field_gorod["und"][0]["safe_value"];
+  $delivery_street1 = $order->delivery_street1;
+  $reg_street = $account->field_adres["und"][0]["safe_value"];
+  $delivery_street2 = $order->delivery_street2;
+  //$delivery_postal_code = $order->delivery_postal_code;
+  $reg_postal_code = $account->field_pocht_indeks["und"][0]["safe_value"];
   $cargo_company = $order->uc_addresses['shipping']->getField('ucxf_cargo_company');
 
   $inn = $account->field_vat_id["und"][0]["safe_value"];
@@ -53,33 +60,40 @@ function cml_store_order_create_orders($params) {
     $is_personal = TRUE;
   }
 
-  $region_name = db_select('uc_zones')
-    ->condition('zone_id', $region_id)
+  $delivery_region_name = db_select('uc_zones')
+    ->condition('zone_id', $delivery_region_id)
     ->fields('uc_zones', ['zone_name'])
     ->execute()
     ->fetchField();
 
-  $country_name = db_select('uc_countries')
-    ->condition('country_id', $country_id)
+  $delivery_country_name = db_select('uc_countries')
+    ->condition('country_id', $delivery_country_id)
     ->fields('uc_countries', ['country_name'])
     ->execute()
     ->fetchField();
-  $country_name = t($country_name);
+  $delivery_country_name = t($delivery_country_name);
 
-  if ($last_name) {
-    $FIO = $last_name . " " . $first_name;
+  $reg_country = $delivery_country_name;
+
+  if ($delivery_last_name) {
+    $FIO = $delivery_last_name . " " . $delivery_first_name;
   } else {
-    $FIO = $first_name;
+    $FIO = $delivery_first_name;
   }
 
   if (!trim($FIO)) {
-    $FIO = $account->name;
+    $FIO = FALSE;
   }
   if ($account->field_kompaniya["und"][0]["safe_value"] != '') {
     $buyer = $account->field_kompaniya["und"][0]["safe_value"];
-  } else {
+  } elseif ($FIO) {
     $buyer = $FIO;
+  } else {
+    $buyer = $account->name;
   }
+
+  //Регион со складов которого осуществлён заказ
+  $current_region = $order->products[1]->data["region_stock"];
 
   /**
    * Получение информации о менеджере
@@ -104,34 +118,56 @@ function cml_store_order_create_orders($params) {
   }
 
   $delivery_address_full = FALSE;
-  if ($country_name) {
-    $delivery_address_full = $country_name;
+  if ($delivery_country_name) {
+    $delivery_address_full = $delivery_country_name;
   }
-  if ($region_name) {
+  if ($delivery_region_name) {
     if ($delivery_address_full) {
       $delivery_address_full .= ', ';
     }
-    $delivery_address_full .= $region_name;
+    $delivery_address_full .= $delivery_region_name;
   }
-  if ($city) {
+  if ($delivery_city) {
     if ($delivery_address_full) {
       $delivery_address_full .= ', ';
     }
-    $delivery_address_full .= $city;
+    $delivery_address_full .= $delivery_city;
   }
-  if ($street1) {
+  if ($delivery_street1) {
     if ($delivery_address_full) {
       $delivery_address_full .= ', ';
     }
-    $delivery_address_full .= $street1;
+    $delivery_address_full .= $delivery_street1;
   }
-  if ($street2) {
+  if ($delivery_street2) {
     if ($delivery_address_full) {
       $delivery_address_full .= ', ';
     }
-    $delivery_address_full .= $street2;
+    $delivery_address_full .= $delivery_street2;
   }
 
+  $reg_address_full = FALSE;
+  if ($reg_country) {
+    $reg_address_full = $reg_country;
+  }
+  if ($reg_region) {
+    if ($reg_address_full) {
+      $reg_address_full .= ', ';
+    }
+    $reg_address_full .= $reg_region;
+  }
+  if ($reg_city) {
+    if($reg_address_full) {
+      $reg_address_full .= ', ';
+    }
+    $reg_address_full .= $reg_city;
+  }
+  if ($reg_street) {
+    if($reg_address_full) {
+      $reg_address_full .= ', ';
+    }
+    $reg_address_full .= $reg_street;
+  }
 
 
   // создание файла ордера
@@ -173,8 +209,12 @@ function cml_store_order_create_orders($params) {
     $_k->addChild("Наименование", $buyer);
     $_k->addChild("Роль", 'Покупатель');
     $_k->addChild("ПолноеНаименование", $buyer);
-    $_k->addChild("Фамилия", $last_name);
-    $_k->addChild("Имя", $first_name);
+    if ($reg_last_name) {
+      $_k->addChild("Фамилия", $reg_last_name);
+    }
+    if ($reg_first_name) {
+      $_k->addChild("Имя", $reg_first_name);
+    }
 
     //Реквизиты контрагента
     $_r = $_k->addChild('РеквизитыКонтрагента');
@@ -195,22 +235,22 @@ function cml_store_order_create_orders($params) {
     $_r1->addChild('КорСчёт', $kor_acc);
 
     $_k1 = $_k->addChild('АдресРегистрации');
-    $_k2 = $_k1->addChild('Представление', $delivery_address_full);
+    $_k2 = $_k1->addChild('Представление', $reg_address_full);
     $_k2 = $_k1->addChild('АдресноеПоле');
     $_k2->addChild('Тип', 'Почтовый индекс');
-    $_k2->addChild('Значение', $postal_code);
+    $_k2->addChild('Значение', $reg_postal_code);
     $_k2 = $_k1->addChild('АдресноеПоле');
     $_k2->addChild('Тип', 'Страна');
-    $_k2->addChild('Значение', $country_name);
+    $_k2->addChild('Значение', $reg_country);
     $_k2 = $_k1->addChild('АдресноеПоле');
     $_k2->addChild('Тип', 'Регион');
-    $_k2->addChild('Значение', $region_name);
+    $_k2->addChild('Значение', $reg_region);
     $_k2 = $_k1->addChild('АдресноеПоле');
     $_k2->addChild('Тип', 'Город');
-    $_k2->addChild('Значение', $city);
+    $_k2->addChild('Значение', $reg_city);
     $_k2 = $_k1->addChild('АдресноеПоле');
     $_k2->addChild('Тип', 'Адрес');
-    $_k2->addChild('Значение', $street1);
+    $_k2->addChild('Значение', $reg_street);
     $_k2 = $_k1->addChild('АдресноеПоле');
     $_k1 = $_k->addChild('Контакты');
     $_k2 = $_k1->addChild('Контакт');
@@ -298,7 +338,47 @@ function cml_store_order_create_orders($params) {
       $t2->addChild('Значение', $cargo_company);
     }
 
-    //Менеджер
+  //Адрес доставки
+  if ($delivery_address_full) {
+    $t2 = $t1->addChild('ЗначениеРеквизита');
+    $t2->addChild('Наименование', 'Адрес доставки');
+    $t2->addChild('Значение', $delivery_address_full);
+  }
+
+  //Грузополучатель
+  if ($delivery_first_name) {
+    $t2 = $t1->addChild('ЗначениеРеквизита');
+    $t2->addChild('Наименование', 'Грузополучатель');
+    $t2->addChild('Значение', $delivery_first_name . ' ' . $delivery_last_name);
+  }
+
+  if ($delivery_company) {
+    $t2 = $t1->addChild('ЗначениеРеквизита');
+    $t2->addChild('Наименование', 'Компания-грузополучатель');
+    $t2->addChild('Значение', $delivery_company);
+  }
+
+  //Телефон получателя
+  if ($delivery_phone) {
+    $t2 = $t1->addChild('ЗначениеРеквизита');
+    $t2->addChild('Наименование', 'Телефон получателя');
+    $t2->addChild('Значение', $delivery_phone);
+  }
+
+  //Склад отгрузки
+  if ($current_region) {
+      $stock = $current_region;
+      if ($current_region == 'Russia') {
+        $stock = 'Основной';
+      } elseif ($current_region == 'China') {
+        $stock = 'Китай';
+      }
+    $t2 = $t1->addChild('ЗначениеРеквизита');
+    $t2->addChild('Наименование', 'Склад отгрузки');
+    $t2->addChild('Значение', $stock);
+  }
+
+  //Менеджер
   if ($manager) {
     $t2 = $t1->addChild('ЗначениеРеквизита');
     $t2->addChild('Наименование', 'Менеджер');

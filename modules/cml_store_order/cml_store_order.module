@@ -220,10 +220,6 @@ function cml_store_order_create_orders($params) {
     $_k2->addChild('Тип', 'Телефон');
     $_k2->addChild('Значение', $phone);
 
-    $_k1 = $_k->addChild("Имя", $first_name);
-    $_k1 = $_k->addChild("Фамилия", $last_name);
-    $_k1 = $_k->addChild("Роль", "Покупатель");
-
      $doc->addChild("Время", date('H:m:s', $created));
 
     // Комментарий

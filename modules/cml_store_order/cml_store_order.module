@@ -15,15 +15,128 @@ function cml_store_order_importkit_info()
  * @param mixed $op
  * @param mixed $orders
  */
-function cml_store_order_create_orders($params)
-{
-    global $user;
+function cml_store_order_create_orders($params) {
+  global $user;
 
-    extract($params);
+  extract($params);
+  $account = user_load($order->uid);
 
-    // создание файла ордера
-    $timechange = time();
-    $no_spaces = '<?xml version="1.0" encoding="windows-1251"?>
+  $last_name = $order->delivery_last_name;
+  $first_name = $order->delivery_first_name;
+  $phone = $account->field_telefon['und'][0]['safe_value'];
+  $delivery_phone = $order->delivery_phone;
+  $email = $order->primary_email;
+  $country_id = $order->delivery_country;
+  $region_id = $order->delivery_zone;
+  $city = $order->delivery_city;
+  $street1 = $order->delivery_street1;
+  $street2 = $order->delivery_street2;
+  $postal_code = $order->delivery_postal_code;
+  $cargo_company = $order->uc_addresses['shipping']->getField('ucxf_cargo_company');
+
+  $inn = $account->field_vat_id["und"][0]["safe_value"];
+  $ogrn = $account->field_ogrn["und"][0]["safe_value"];
+  $kpp = $account->field_kpp["und"][0]["safe_value"];
+  $bank_name = $account->field_bank_name["und"][0]["safe_value"];
+  $bank_account = $account->field_bank_account_number["und"][0]["safe_value"];
+  $bik = $account->field_bik["und"][0]["value"];
+  $kor_acc = $account->field_correspondent_acc["und"][0]["safe_value"];
+  $bank_inn = $account->field_bank_inn["und"][0]["value"];
+  $bank_kpp = $account->field_bank_kpp["und"][0]["value"];
+
+  $is_org = FALSE;
+  $is_personal = FALSE;
+
+  if (strlen($inn) <= 11) {
+    $is_org = TRUE;
+  } elseif (strlen($inn) > 11) {
+    $is_personal = TRUE;
+  }
+
+  $region_name = db_select('uc_zones')
+    ->condition('zone_id', $region_id)
+    ->fields('uc_zones', ['zone_name'])
+    ->execute()
+    ->fetchField();
+
+  $country_name = db_select('uc_countries')
+    ->condition('country_id', $country_id)
+    ->fields('uc_countries', ['country_name'])
+    ->execute()
+    ->fetchField();
+  $country_name = t($country_name);
+
+  if ($last_name) {
+    $FIO = $last_name . " " . $first_name;
+  } else {
+    $FIO = $first_name;
+  }
+
+  if (!trim($FIO)) {
+    $FIO = $account->name;
+  }
+  if ($account->field_kompaniya["und"][0]["safe_value"] != '') {
+    $buyer = $account->field_kompaniya["und"][0]["safe_value"];
+  } else {
+    $buyer = $FIO;
+  }
+
+  /**
+   * Получение информации о менеджере
+   */
+  $manager_nid = node_load($account->field_manager["und"][0]["target_id"]);
+  $manager = $manager_nid->field_code_1c["und"][0]["safe_value"];
+
+  foreach ($account->roles as $rid=>$role) {
+    if ($rid != '2') {
+      if ($role == "Оптовый клиент") {
+        $comments .= ' - Клиент с "Садовода"';
+      } else {
+        $comments .= ' - ' . $role;
+      }
+    }
+  }
+  if ($cargo_company) {
+    $comments .= '. ТК:' . $cargo_company;
+  }
+  if ($manager) {
+    $comments .= '. Менеджер:' . $manager;
+  }
+
+  $delivery_address_full = FALSE;
+  if ($country_name) {
+    $delivery_address_full = $country_name;
+  }
+  if ($region_name) {
+    if ($delivery_address_full) {
+      $delivery_address_full .= ', ';
+    }
+    $delivery_address_full .= $region_name;
+  }
+  if ($city) {
+    if ($delivery_address_full) {
+      $delivery_address_full .= ', ';
+    }
+    $delivery_address_full .= $city;
+  }
+  if ($street1) {
+    if ($delivery_address_full) {
+      $delivery_address_full .= ', ';
+    }
+    $delivery_address_full .= $street1;
+  }
+  if ($street2) {
+    if ($delivery_address_full) {
+      $delivery_address_full .= ', ';
+    }
+    $delivery_address_full .= $street2;
+  }
+
+
+
+  // создание файла ордера
+  $timechange = time();
+  $no_spaces = '<?xml version="1.0" encoding="windows-1251"?>
 	<КоммерческаяИнформация ВерсияСхемы="2.05"
 		ДатаФормирования="' . date('Y-m-d', $timechange) . 'T' . date('H:m:s', $timechange) . '"
 		ФорматДаты="ДФ=yyyy-MM-dd; ДЛФ=DT"
@@ -55,32 +168,50 @@ function cml_store_order_create_orders($params)
     $k = $doc->addChild('Контрагенты');
     $_k = $k->addChild('Контрагент');
 
-    $accaunt = user_load($order->uid);
+    $_k->addChild("Ид", "{$account->uid}#{$account->name}#");
 
-    $_k->addChild("Ид", "{$accaunt->uid}#{$accaunt->name}#");
-
-    $FIO = $last_name . " " . $first_name . " " . $patronymic_name;
-    if (!trim($FIO)) {
-        $FIO = $accaunt->name;
-    }
-    $_k->addChild("Наименование", $FIO);
+    $_k->addChild("Наименование", $buyer);
     $_k->addChild("Роль", 'Покупатель');
-    $_k->addChild("ПолноеНаименование", $FIO);
+    $_k->addChild("ПолноеНаименование", $buyer);
     $_k->addChild("Фамилия", $last_name);
     $_k->addChild("Имя", $first_name);
 
+    //Реквизиты контрагента
+    $_r = $_k->addChild('РеквизитыКонтрагента');
+    if ($is_personal) {
+      $_r->addChild('ТипКонтрагента', 'Физическое лицо');
+    } elseif ($is_org) {
+      $_r->addChild('ТипКонтрагента', 'Юридическое лицо');
+    }
+    $_r->addChild('ИНН', $inn);
+    $_r->addChild('ОГРН', $ogrn);
+    $_r->addChild('КПП', $kpp);
+    $_r1 = $_r->addChild('БанковскиеРеквизиты');
+    $_r1->addChild('НомерСчёта', $bank_account);
+    $_r1->addChild('НаименованиеБанка', $bank_name);
+    $_r1->addChild('БИК', $bik);
+    $_r1->addChild('ИННБанка', $bank_inn);
+    $_r1->addChild('КППБанка', $bank_kpp);
+    $_r1->addChild('КорСчёт', $kor_acc);
+
     $_k1 = $_k->addChild('АдресРегистрации');
-    $_k2 = $_k1->addChild('Представление', $street1 . ' ' . $street2);
+    $_k2 = $_k1->addChild('Представление', $delivery_address_full);
     $_k2 = $_k1->addChild('АдресноеПоле');
     $_k2->addChild('Тип', 'Почтовый индекс');
     $_k2->addChild('Значение', $postal_code);
     $_k2 = $_k1->addChild('АдресноеПоле');
     $_k2->addChild('Тип', 'Страна');
-    $_k2->addChild('Значение', '');
+    $_k2->addChild('Значение', $country_name);
+    $_k2 = $_k1->addChild('АдресноеПоле');
+    $_k2->addChild('Тип', 'Регион');
+    $_k2->addChild('Значение', $region_name);
     $_k2 = $_k1->addChild('АдресноеПоле');
     $_k2->addChild('Тип', 'Город');
     $_k2->addChild('Значение', $city);
-
+    $_k2 = $_k1->addChild('АдресноеПоле');
+    $_k2->addChild('Тип', 'Адрес');
+    $_k2->addChild('Значение', $street1);
+    $_k2 = $_k1->addChild('АдресноеПоле');
     $_k1 = $_k->addChild('Контакты');
     $_k2 = $_k1->addChild('Контакт');
     $_k2->addChild('Тип', 'Почта');
@@ -93,7 +224,7 @@ function cml_store_order_create_orders($params)
     $_k1 = $_k->addChild("Фамилия", $last_name);
     $_k1 = $_k->addChild("Роль", "Покупатель");
 
-    $doc->addChild("Время", date('H:m:s', $created));
+     $doc->addChild("Время", date('H:m:s', $created));
 
     // Комментарий
     if (isset($comments)) {
@@ -103,6 +234,7 @@ function cml_store_order_create_orders($params)
     $t1 = $doc->addChild('Товары');
 
     foreach ($products as $product) {
+      if ($product->guid) {
         // Доставка товара
         $t1_1 = $t1->addChild('Товар');
 
@@ -111,7 +243,7 @@ function cml_store_order_create_orders($params)
         $t1_2 = $t1_1->addChild("Ид", (isset($product_guid) ? $product_guid : 'ORDER_DELIVERY'));
 
         if (isset($product->model)) {
-            $t1_2 = $t1_1->addChild("ИдКаталога", $product->model);
+          $t1_2 = $t1_1->addChild("ИдКаталога", $product->model);
         }
 
         $t1_2 = $t1_1->addChild("Наименование", $product->title);
@@ -132,6 +264,7 @@ function cml_store_order_create_orders($params)
         $t1_3 = $t1_2->addChild('ЗначениеРеквизита');
         $_k4 = $t1_3->addChild('Наименование', 'ТипНоменклатуры');
         $_k4 = $t1_3->addChild('Значение', 'Товар');
+      }
     }
 
     $t1 = $doc->addChild('ЗначенияРеквизитов');
@@ -159,8 +292,22 @@ function cml_store_order_create_orders($params)
 
         $t2 = $t1->addChild('ЗначениеРеквизита');
         $t2->addChild('Наименование', 'Способ доставки');
-        $t2->addChild('Значение', $shipping['title']);
+        $t2->addChild('Значение', $shipping);
     }
+
+    //Транспортная компания
+    if ($cargo_company) {
+      $t2 = $t1->addChild('ЗначениеРеквизита');
+      $t2->addChild('Наименование', 'Транспортная компания');
+      $t2->addChild('Значение', $cargo_company);
+    }
+
+    //Менеджер
+  if ($manager) {
+    $t2 = $t1->addChild('ЗначениеРеквизита');
+    $t2->addChild('Наименование', 'Менеджер');
+    $t2->addChild('Значение', $manager);
+  }
 
     $t2 = $t1->addChild('ЗначениеРеквизита');
     $t2->addChild('Наименование', 'Отменен');
@@ -181,7 +328,7 @@ function cml_store_order_create_orders($params)
 
     $t2 = $t1->addChild('ЗначениеРеквизита');
     $t2->addChild('Наименование', 'Сайт');
-    $t2->addChild('Значение', 'ImportKit');
+    $t2->addChild('Значение', '.it');
 
     $body = $xml->asXML();
 
@@ -310,7 +457,7 @@ function cml_store_order_uc_order($op, $order, $edit = array())
               'payment_received' => $payment_received,
               'payment_receipt_id' => $payment_receipt_id,
               'payment_method' => $payment_method,
-              'shipping' => $shipping,
+              'shipping' => $shipping['title'],
               'phone' => '',
               'products' => $products,
 

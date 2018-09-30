@@ -859,8 +859,13 @@ function cml_store_content_create_node_ubercart($params)
   $node->model = $sku;
 
   // Штрихкод
-  $barcode = importkit_tutf($element->Штрихкод);
-  $node->field_barcode['und'][0]['value'] = $barcode;
+  $barcodes = array();
+  foreach($element->Штрихкоды->Штрихкод as $barcode) {
+    $barcodes[] = importkit_tutf($barcode);
+  }
+  foreach ($barcodes as $key => $barcode) {
+    $node->field_barcode['und'][$key]['value'] = $barcode;
+  }
 
   // Настройка ноды
   $node->changed = time();
@@ -970,17 +975,18 @@ function cml_store_content_create_node_ubercart($params)
 
     }
 
-    (redirect_load_by_source('ean/' . $barcode)) ? $ean_redirect_exists = TRUE : $ean_redirect_exists = FALSE;
-
-    if($ean_redirect_exists == FALSE) {
-      $ean_path = array(
-        'source' => 'ean/' .$barcode,
-        'redirect' => 'node/' . $node->nid,
-      );
-      // Make redirects for new paths.
-      $redirect = new stdClass();
-      redirect_object_prepare($redirect, $ean_path);
-      redirect_save($redirect);
+    foreach ($barcodes as $barcode) {
+      if (redirect_load_by_source('ean/' . $barcode)){
+      } else {
+        $ean_path = [
+          'source' => 'ean/' . $barcode,
+          'redirect' => 'node/' . $node->nid,
+        ];
+        // Make redirects for new paths.
+        $redirect = new stdClass();
+        redirect_object_prepare($redirect, $ean_path);
+        redirect_save($redirect);
+      }
     }
 
     // Сохраняем продукт
@@ -1000,8 +1006,13 @@ function cml_store_content_update_node_ubercart($params)
 
   $attributes = array();
 
-  $barcode = importkit_tutf($element->Штрихкод);
-  $node->field_barcode['und'][0]['value'] = $barcode;
+  $barcodes = array();
+  foreach ($element->Штрихкоды->Штрихкод as $barcode) {
+    $barcodes[] = importkit_tutf($barcode);
+  }
+  foreach ($barcodes as $key => $barcode){
+    $node->field_barcode['und'][$key]['value'] = $barcode;
+  }
 
   $rows = db_select('uc_attributes', 'a')->fields('a')->execute();
   foreach ($rows as $row) {

@@ -4,6 +4,7 @@ package = "Import KIT"
 
 dependencies[] = importkit
 dependencies[] = node
+dependencies[] = redirect
 
 version = "7.x-0.10-dev"
 core = "7.x"

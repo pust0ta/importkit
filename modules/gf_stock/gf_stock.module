@@ -266,7 +266,7 @@ function gf_stock_block_contents($block) {
  * Возврат текущего региона пользователя.
  */
 function gf_stock_get_current_region() {
-  $default_region = variable_get('gf_stock_default_region', GF_STOCK_REGION_ALL);
+  $default_region = variable_get('gf_stock_default_region', GF_STOCK_REGION_RU);
   return isset($_SESSION['gf_stock_region']) ? $_SESSION['gf_stock_region'] : $default_region;
 }
 

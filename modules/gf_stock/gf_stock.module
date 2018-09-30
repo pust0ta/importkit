@@ -427,7 +427,7 @@ function gf_stock_cron() {
  *
  * Правим цену в корзине в соответствии с регионом заказа
  */
-function gf_stock_uc_cart_alter(&$items) {
+/*function gf_stock_uc_cart_alter(&$items) {
   $region_stock = FALSE;
   if (user_has_role(18) or user_has_role(19)) { $extra_10 = true; }
 
@@ -483,7 +483,7 @@ function gf_stock_uc_cart_alter(&$items) {
     }
   }
 }
-
+*/
 
 /**
  * Implements hook_uc_add_to_cart_data().

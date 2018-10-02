@@ -174,7 +174,7 @@ function cml_store_order_create_orders($params) {
   $timechange = time();
   $no_spaces = '<?xml version="1.0" encoding="windows-1251"?>
 	<КоммерческаяИнформация ВерсияСхемы="2.05"
-		ДатаФормирования="' . date('Y-m-d', $timechange) . 'T' . date('H:m:s', $timechange) . '"
+		ДатаФормирования="' . date('Y-m-d', $timechange) . 'T' . date('H:i:s', $timechange) . '"
 		ФорматДаты="ДФ=yyyy-MM-dd; ДЛФ=DT"
 		ФорматВремени="ДФ=ЧЧ:мм:сс; ДЛФ=T"
 		РазделительДатаВремя="T"
@@ -400,7 +400,7 @@ function cml_store_order_create_orders($params) {
 
     $t2 = $t1->addChild('ЗначениеРеквизита');
     $t2->addChild('Наименование', 'Дата изменения статуса');
-    $t2->addChild('Значение', date('Y-m-d h:i:s', time()));
+    $t2->addChild('Значение', date('Y-m-d H:i:s', time()));
 
     $t2 = $t1->addChild('ЗначениеРеквизита');
     $t2->addChild('Наименование', 'Сайт');

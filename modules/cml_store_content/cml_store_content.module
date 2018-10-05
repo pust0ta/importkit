@@ -829,7 +829,8 @@ function cml_store_content_get_guid($product)
           // косячная строка (в поле pid содержится vid продукта, а не его nid)
           // $guid = db_select('importkit_cml_offers', 'o')->fields('o', array('guid1', 'guid2'))->condition('o.pid', $product->nid)->execute()->fetchObject();
           // с измененным кондишеном
-          $guid = db_select('importkit_cml_offers', 'o')->fields('o', array('guid1', 'guid2'))->condition('o.nid', $product->nid)->execute()->fetchObject();
+          // $guid = db_select('importkit_cml_offers', 'o')->fields('o', array('guid1', 'guid2'))->condition('o.nid', $product->nid)->execute()->fetchObject();
+          $guid = db_select('importkit_cml_offers', 'o')->fields('o', array('guid1', 'guid2'))->condition('o.pid', $product->vid)->execute()->fetchObject();
         }
       }
       break;

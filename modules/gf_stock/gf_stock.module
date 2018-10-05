@@ -76,16 +76,16 @@ function gf_stock_importkit_stock($entity, $xml_element){
     // Запись в таблицу importkit_cml_stock оставляем на
     // случай ее использования другими неведомыми модулями.
     // В нашем она будет нафиг не нужна.
-    db_merge('importkit_cml_stock')->key(array(
-      'guid1' => $entity->guid1,
-      'guid2' => $entity->guid2,
-      'nid' => $entity->nid,
-      'warehouse' => (string) $element->ИдСклада,
-    ))->fields(array(
-      'stock' => (string) $element->Остаток,
-      'warehouse' => (string) $element->ИдСклада,
-      'region' => (string) $element->Регион,
-    ))->execute();
+    // db_merge('importkit_cml_stock')->key(array(
+    //   'guid1' => $entity->guid1,
+    //   'guid2' => $entity->guid2,
+    //   'nid' => $entity->nid,
+    //   'warehouse' => (string) $element->ИдСклада,
+    // ))->fields(array(
+    //   'stock' => (string) $element->Остаток,
+    //   'warehouse' => (string) $element->ИдСклада,
+    //   'region' => (string) $element->Регион,
+    // ))->execute();
 
     // Запись непосредственно в таблицу, которая будет
     // использоваться в дальнейшем для отображения остатков по регионам.

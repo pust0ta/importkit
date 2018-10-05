@@ -121,8 +121,17 @@ function gf_stock_node_load($nodes, $types){
     $stock = (int) $record->stock;
     // Складываем суммы остатков в конкретном регионе для разных представлений.
     if ($record->guid2) {
-      // При наличии guid2 - расширяем массив
-      $nodes[$record->nid]->gf_region_stock[$record->region][$record->guid2] = $stock;
+      // Поле с guid2 в товаре нам будет нужно для последующих обработок.
+      $nodes[$record->nid]->guid2 = $record->guid2;
+      // При наличии guid2 - расширяем массив региональных остатков.
+      $nodes[$record->nid]->gf_region_stock[$record->guid2][$record->region] = $stock;
+    }
+    // Что бы не возникало ошибок в написанных ранее(Ильей) обработчиках
+    // данного массива, оставляем остаток по регионам без учета рановидностей товара.
+    // При наличии у тавара оных разновидностей - используем соответствующие данные
+    // в массиве с guid2(условие выше).
+    if (isset($nodes[$record->nid]->gf_region_stock[$record->region])) {
+      $nodes[$record->nid]->gf_region_stock[$record->region] += $stock;
     }
     else{
       $nodes[$record->nid]->gf_region_stock[$record->region] = $stock;

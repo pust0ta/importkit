@@ -107,7 +107,7 @@ function gf_stock_update_7002() {
 /**
  * Добавление поля guid2 - разновидности товара.
  */
-function gf_order_update_7103() {
+function gf_stock_update_7103() {
   db_add_field('gf_stock_stocks', 'guid2', [
     'description' => 'Guid2 Hash',
     'type' => 'varchar',

@@ -12,19 +12,19 @@ function gf_stock_schema() {
         'not null' => TRUE,
         'default' => 0,
       ),
-      'guid2' => array( // идентификатор разновидности товара
-        'description' => 'Guid2 Hash',
-        'type' => 'varchar',
-        'length' => 37,
-        'not null' => TRUE,
-        'default' => 0,
-      ),
       'region' => array(
         'description' => 'Warehouse region.',
         'type' => 'varchar',
         'length' => 50,
         'not null' => true,
         'default' => '',
+      ),
+      'guid2' => array( // идентификатор разновидности товара
+        'description' => 'Guid2 Hash',
+        'type' => 'varchar',
+        'length' => 37,
+        'not null' => TRUE,
+        'default' => 0,
       ),
       'stock' => array(
         'description' => 'Quantity in stock.',
@@ -33,7 +33,7 @@ function gf_stock_schema() {
         'not null' => TRUE,
         'default' => 0,
       ),),
-    'primary key' => array('nid', 'region'),
+    'primary key' => array('nid', 'region', 'guid2'),
   );
 
   $schema['gf_stock_prices'] = array(
@@ -115,4 +115,14 @@ function gf_stock_update_7103() {
     'not null' => TRUE,
     'default' => 0,
   ]);
+}
+
+/**
+ * Изменение первичных ключей в таблице остатков.
+ */
+function gf_stock_update_7104() {
+  // Drop all primary keys.
+  db_drop_primary_key('gf_stock_stocks');
+  // // Add primary keys.
+  db_add_primary_key('gf_stock_stocks', array('nid', 'region', 'guid2'));
 }

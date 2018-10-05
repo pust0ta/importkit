@@ -93,6 +93,7 @@ function gf_stock_importkit_stock($entity, $xml_element){
       ->key(array(
         'nid' => $entity->nid,
         'region' => $element->Регион,
+        'guid2' => $entity->guid2,
       ))
       ->fields(array(
           'stock' => $element->Остаток,
@@ -110,15 +111,22 @@ function gf_stock_importkit_stock($entity, $xml_element){
 function gf_stock_node_load($nodes, $types){
   if (!count(array_intersect(uc_product_types(), $types))) return;
 
-  $result = db_query("SELECT nid, stock, region
+  $result = db_query("SELECT nid, stock, region, guid2
     FROM {gf_stock_stocks}
     WHERE nid IN(:nids)", array(':nids' => array_keys($nodes),));
 
   // Добавляем при загрузке нод-товаров поля с данными
   // по остаткам в регионах.
   foreach ($result as $record) {
+    $stock = (int) $record->stock;
     // Складываем суммы остатков в конкретном регионе для разных представлений.
-    $nodes[$record->nid]->gf_region_stock[$record->region] = (int) $record->stock;
+    if ($record->guid2) {
+      // При наличии guid2 - расширяем массив
+      $nodes[$record->nid]->gf_region_stock[$record->region][$record->guid2] = $stock;
+    }
+    else{
+      $nodes[$record->nid]->gf_region_stock[$record->region] = $stock;
+    }
   }
 
   $prices = db_select('gf_stock_prices', 'p')

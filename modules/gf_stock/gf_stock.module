@@ -117,7 +117,7 @@ function gf_stock_importkit_stock($entity, $xml_element){
 function gf_stock_node_load($nodes, $types){
   if (!count(array_intersect(uc_product_types(), $types))) return;
 
-  $result = db_query("SELECT nid, stock, region, guid2
+  $result = db_query("SELECT *
     FROM {gf_stock_stocks}
     WHERE nid IN(:nids)", array(':nids' => array_keys($nodes),));
 
@@ -127,8 +127,8 @@ function gf_stock_node_load($nodes, $types){
     $stock = (int) $record->stock;
     // Складываем суммы остатков в конкретном регионе для разных представлений.
     if ($record->guid2) {
-      // Поле с guid2 в товаре нам будет нужно для последующих обработок.
-      $nodes[$record->nid]->guid2[] = $record->guid2;
+      // Мапим и пишем в объект ноды guid2 с массивом атрибутов ubercart.
+      $nodes[$record->nid]->guid2[$record->guid2] = unserialize($record->uc_combination) ;
       // При наличии guid2 - расширяем массив региональных остатков.
       $nodes[$record->nid]->gf_region_stock[$record->guid2][$record->region] = $stock;
     }

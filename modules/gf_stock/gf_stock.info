@@ -3,6 +3,7 @@ description = "Processing of stock data in warehouses for regions and further us
 core = "7.x"
 
 dependencies[] = cml_store_stock
+dependencies[] = cml_store_content
 
 files[] = views/gf_stock.views.inc
 files[] = views/gf_stock_handler_trait.inc

@@ -32,7 +32,16 @@ function gf_stock_schema() {
         'size' => 'medium',
         'not null' => TRUE,
         'default' => 0,
-      ),),
+      ),
+      'uc_combination' => array(
+        'description' => 'A serialized array whose keys are ubercart attribute IDs and values are option IDs.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => true,
+        'default' => '',
+        'serialize' => true,
+      ),
+    ),
     'primary key' => array('nid', 'region', 'guid2'),
   );
 
@@ -125,4 +134,18 @@ function gf_stock_update_7104() {
   db_drop_primary_key('gf_stock_stocks');
   // // Add primary keys.
   db_add_primary_key('gf_stock_stocks', array('nid', 'region', 'guid2'));
+}
+
+/**
+ * Добавление поля с комбинациями для товаров имеющих атрибуты ubercart.
+ */
+function gf_stock_update_7105() {
+  db_add_field('gf_stock_stocks', 'uc_combination', [
+    'description' => 'A serialized array whose keys are ubercart attribute IDs and values are option IDs.',
+    'type' => 'varchar',
+    'length' => 255,
+    'not null' => true,
+    'default' => '',
+    'serialize' => true,
+  ]);
 }

@@ -89,15 +89,21 @@ function gf_stock_importkit_stock($entity, $xml_element){
 
     // Запись непосредственно в таблицу, которая будет
     // использоваться в дальнейшем для отображения остатков по регионам.
+    $fields = [];
+    $fields['stock'] = $element->Остаток;
+    if ($entity->guid2) {
+      // Наличие guid2 сигнализирует о том, что у товара есть разновидности.
+      // Записываем их данные в соответствующее поле.
+      $fields['uc_combination'] = gf_stock_get_uc_combination($entity->nid, 
+        $entity->guid2);
+    }
     db_merge('gf_stock_stocks')
       ->key(array(
         'nid' => $entity->nid,
         'region' => $element->Регион,
         'guid2' => $entity->guid2,
       ))
-      ->fields(array(
-          'stock' => $element->Остаток,
-      ))
+      ->fields($fields)
       ->expression('stock', 'stock + :inc', array(':inc' => $element->Остаток))
       ->execute();
 
@@ -122,7 +128,7 @@ function gf_stock_node_load($nodes, $types){
     // Складываем суммы остатков в конкретном регионе для разных представлений.
     if ($record->guid2) {
       // Поле с guid2 в товаре нам будет нужно для последующих обработок.
-      $nodes[$record->nid]->guid2 = $record->guid2;
+      $nodes[$record->nid]->guid2[] = $record->guid2;
       // При наличии guid2 - расширяем массив региональных остатков.
       $nodes[$record->nid]->gf_region_stock[$record->guid2][$record->region] = $stock;
     }
@@ -217,7 +223,7 @@ function gf_stock_region_switch($region=''){
       $_SESSION['gf_stock_region'] = $regions[$region];
     }
   }
-  // Если регион не получе - обнуляем параметр в сессии.
+  // Если регион не получен - обнуляем параметр в сессии.
   elseif (isset($_SESSION['gf_stock_region'])) {
     unset($_SESSION['gf_stock_region']);
   }
@@ -531,14 +537,30 @@ function gf_stock_uc_add_to_cart_data($form_values) {
 function gf_stock_uc_checkout_complete($order, $account) {
   // Декрементим количество в стоках на основе заказанного.
   foreach ($order->products as $pid=>$data) {
+    // Добавляем проверку на товар с атрибутами.
+    $guids = explode('#', $data->guid);
+    $guid2 = isset($guids[1]) ? $guids[1] : '';
     try {
       db_update('gf_stock_stocks')
         ->expression('stock', 'stock - :qty', array(':qty' => $data->qty))
         ->condition('nid', $data->nid)
         ->condition('region', $data->data['region_stock'])
+        ->condition('guid2', $guid2)
         ->execute();
     } catch(Exception $e) {
       watchdog('gf_stock', $e->getMessage(), array(), WATCHDOG_ERROR);
     }
   }
+}
+
+/**
+ * Получаем варианты нужного товара.
+ */
+function gf_stock_get_uc_combination($nid, $guid2) {
+  return db_select('importkit_cml_offers', 'o')
+    ->fields('o', array('uc_combination'))
+    ->condition('o.nid', $nid)
+    ->condition('o.guid2', $guid2)
+    ->execute()
+    ->fetchField();
 }

@@ -34,7 +34,7 @@ class gf_stock_handler_sort_stock extends views_handler_sort{
     $this->ensure_my_table();
     $nid = 'node.nid';
     $region = $this->options['gf_stock_region'];
-    $expression = "(SELECT stock FROM {$this->table_alias} 
+    $expression = "(SELECT SUM(stock) FROM {$this->table_alias} 
       WHERE nid = {$nid} AND region = '$region')";
 
     $this->query->add_orderby(NULL, 

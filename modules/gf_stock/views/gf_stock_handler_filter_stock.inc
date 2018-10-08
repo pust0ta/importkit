@@ -90,7 +90,7 @@ class gf_stock_handler_filter_stock extends views_handler_filter_numeric{
     $this->ensure_my_table();
     $nid = 'node.nid';
     $region = $this->_gf_stock_get_region();
-    $expression = "(SELECT stock FROM {$this->table_alias} 
+    $expression = "(SELECT SUM(stock) FROM {$this->table_alias} 
       WHERE nid = {$nid} AND region = '$region')";
 
     $info = $this->operators();

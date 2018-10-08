@@ -369,6 +369,9 @@ function importkit_batch_finished($success, $results, $operations)
         importkit_run();
     } else {
         rules_invoke_event('importkit_import_finished', $results);
+        // Инициализируем хук, выполняющий нужные действия по окончинии импорта.
+        // hook_importkit_import_finished()
+        module_invoke_all('importkit_import_finished');
 
         // Переводим в рабочий режим
         variable_set('maintenance_mode', 0);

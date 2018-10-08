@@ -60,15 +60,23 @@ function gf_stock_node_delete($node) {
 }
 
 /**
+ * Implements hook_importkit_import_finished().
+ */
+function gf_stock_importkit_import_finished() {
+  // По завершении импорта удаляем переменную-флаг.
+  variable_del('gf_stock_import_started');
+}
+
+/**
  * Implements hook_importkit_stock().
  */
 function gf_stock_importkit_stock($entity, $xml_element){
-  $import_started = &drupal_static('gf_stock_import_started');
+  $import_started = variable_get('gf_stock_import_started', FALSE);
 
   if (!$import_started) {
     // Удаляем текущие данные по остаткам в начале импорта.
     db_truncate('gf_stock_stocks')->execute();
-    $import_started = TRUE;
+    variable_set('gf_stock_import_started', TRUE);
   }
 
   // Обновляем при импорте данные по остаткам в регионах.
@@ -557,10 +565,12 @@ function gf_stock_uc_checkout_complete($order, $account) {
  * Получаем варианты нужного товара.
  */
 function gf_stock_get_uc_combination($nid, $guid2) {
-  return db_select('importkit_cml_offers', 'o')
+  $query = db_select('importkit_cml_offers', 'o')
     ->fields('o', array('uc_combination'))
     ->condition('o.nid', $nid)
     ->condition('o.guid2', $guid2)
     ->execute()
     ->fetchField();
+
+  return (is_null($query)) ? '' : $query;
 }

@@ -824,13 +824,19 @@ function cml_store_content_get_guid($product)
         if (isset($product->data['combination'])) {
           $combination = $product->data['combination'];
           ksort($combination);
-          $guid = db_select('importkit_cml_offers', 'o')->fields('o', array('guid1', 'guid2'))->condition('o.uc_combination', serialize($combination))->execute()->fetchObject();
+          $guid = db_select('importkit_cml_offers', 'o')
+            ->fields('o', array('guid1', 'guid2'))
+            ->condition('o.nid', $product->nid)
+            ->condition('o.uc_combination', serialize($combination))
+            ->execute()->fetchObject();
         } else {
           // косячная строка (в поле pid содержится vid продукта, а не его nid)
           // $guid = db_select('importkit_cml_offers', 'o')->fields('o', array('guid1', 'guid2'))->condition('o.pid', $product->nid)->execute()->fetchObject();
           // с измененным кондишеном
-          $guid = db_select('importkit_cml_offers', 'o')->fields('o', array('guid1', 'guid2'))->condition('o.nid', $product->nid)->execute()->fetchObject();
-          // $guid = db_select('importkit_cml_offers', 'o')->fields('o', array('guid1', 'guid2'))->condition('o.pid', $product->vid)->execute()->fetchObject();
+          $guid = db_select('importkit_cml_offers', 'o')
+            ->fields('o', array('guid1', 'guid2'))
+            ->condition('o.nid', $product->nid)
+            ->execute()->fetchObject();
         }
       }
       break;

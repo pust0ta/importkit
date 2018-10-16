@@ -211,7 +211,6 @@ function cml_store_order_create_orders($params) {
 
     $_k->addChild("Наименование", $buyer);
     $_k->addChild("Роль", 'Покупатель');
-    $_k->addChild("КлиентCСадовода", ($is_sadovod)? 'Да':'Нет');
     $_k->addChild("ПолноеНаименование", $buyer);
     if ($reg_last_name) {
       $_k->addChild("Фамилия", $reg_last_name);
@@ -388,18 +387,22 @@ function cml_store_order_create_orders($params) {
     $t2->addChild('Наименование', 'Менеджер');
     $t2->addChild('Значение', $manager_name);
   }
+  // Признак "Садовода"
+  $t2 = $t1->addChild('ЗначениеРеквизита');
+  $t2->addChild('Наименование', 'РольМенеджера');
+  $t2->addChild('Значение', ($is_sadovod)? 'Садовод':'Московский опт');
 
-    $t2 = $t1->addChild('ЗначениеРеквизита');
-    $t2->addChild('Наименование', 'Отменен');
-    $t2->addChild('Значение', 'false');
+  $t2 = $t1->addChild('ЗначениеРеквизита');
+  $t2->addChild('Наименование', 'Отменен');
+  $t2->addChild('Значение', 'false');
 
-    $t2 = $t1->addChild('ЗначениеРеквизита');
-    $t2->addChild('Наименование', 'Финальный статус');
-    $t2->addChild('Значение', 'false');
+  $t2 = $t1->addChild('ЗначениеРеквизита');
+  $t2->addChild('Наименование', 'Финальный статус');
+  $t2->addChild('Значение', 'false');
 
-    $t2 = $t1->addChild('ЗначениеРеквизита');
-    $t2->addChild('Наименование', 'Статус заказа');
-    $t2->addChild('Значение', variable_get('importkit_order_status', 'Готов к отгрузке'));
+  $t2 = $t1->addChild('ЗначениеРеквизита');
+  $t2->addChild('Наименование', 'Статус заказа');
+  $t2->addChild('Значение', variable_get('importkit_order_status', 'Готов к отгрузке'));
 
 
     $t2 = $t1->addChild('ЗначениеРеквизита');

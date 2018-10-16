@@ -21,6 +21,7 @@ function cml_store_order_create_orders($params) {
   extract($params);
   $account = user_load($order->uid);
 
+  $is_sadovod = FALSE;
   $delivery_last_name = $order->delivery_last_name;
   $reg_last_name = $account->field_last_name["und"][0]["safe_value"];
   $delivery_first_name = $order->delivery_first_name;
@@ -99,12 +100,14 @@ function cml_store_order_create_orders($params) {
    * Получение информации о менеджере
    */
   $manager_nid = node_load($account->field_manager["und"][0]["target_id"]);
-  $manager = $manager_nid->field_code_1c["und"][0]["safe_value"];
+  $manager_name = $manager_nid->field_code_1c["und"][0]["safe_value"];
+
 
   foreach ($account->roles as $rid=>$role) {
     if ($rid != '2') {
-      if ($role == "Оптовый клиент") {
+      if ($rid == klient_sadovod_rid) {
         $comments .= ' - Клиент с "Садовода"';
+        $is_sadovod = TRUE;
       } else {
         $comments .= ' - ' . $role;
       }
@@ -113,8 +116,8 @@ function cml_store_order_create_orders($params) {
   if ($cargo_company) {
     $comments .= '. ТК:' . $cargo_company;
   }
-  if ($manager) {
-    $comments .= '. Менеджер:' . $manager;
+  if ($manager_name) {
+    $comments .= '. Менеджер:' . $manager_name;
   }
 
   $delivery_address_full = FALSE;
@@ -208,6 +211,7 @@ function cml_store_order_create_orders($params) {
 
     $_k->addChild("Наименование", $buyer);
     $_k->addChild("Роль", 'Покупатель');
+    $_k->addChild("КлиентCСадовода", ($is_sadovod)? 'Да':'Нет');
     $_k->addChild("ПолноеНаименование", $buyer);
     if ($reg_last_name) {
       $_k->addChild("Фамилия", $reg_last_name);
@@ -379,10 +383,10 @@ function cml_store_order_create_orders($params) {
   }
 
   //Менеджер
-  if ($manager) {
+  if ($manager_name) {
     $t2 = $t1->addChild('ЗначениеРеквизита');
     $t2->addChild('Наименование', 'Менеджер');
-    $t2->addChild('Значение', $manager);
+    $t2->addChild('Значение', $manager_name);
   }
 
     $t2 = $t1->addChild('ЗначениеРеквизита');

@@ -105,7 +105,7 @@ function cml_store_order_create_orders($params) {
 
   foreach ($account->roles as $rid=>$role) {
     if ($rid != '2') {
-      if ($rid == klient_sadovod_rid) {
+      if ($rid == klient_sadovod_rid or user_has_role(manager_sadovod_rid, $manager_nid)) {
         $comments .= ' - Клиент с "Садовода"';
         $is_sadovod = TRUE;
       } else {
@@ -387,10 +387,10 @@ function cml_store_order_create_orders($params) {
     $t2->addChild('Наименование', 'Менеджер');
     $t2->addChild('Значение', $manager_name);
   }
-  // Признак "Садовода"
+  // "Садовод"/Не "Садовод"
   $t2 = $t1->addChild('ЗначениеРеквизита');
   $t2->addChild('Наименование', 'РольМенеджера');
-  $t2->addChild('Значение', ($is_sadovod)? 'Садовод':'Московский опт');
+  $t2->addChild('Значение', ($is_sadovod) ? 'Садовод':'Московский опт');
 
   $t2 = $t1->addChild('ЗначениеРеквизита');
   $t2->addChild('Наименование', 'Отменен');

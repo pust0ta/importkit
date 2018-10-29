@@ -693,10 +693,12 @@ function cml_store_content_create_imagefield(
   $destination = file_stream_wrapper_uri_normalize($scheme . $file_directory);
   if (file_prepare_directory($destination, FILE_CREATE_DIRECTORY | FILE_MODIFY_PERMISSIONS)) {
     $destination .= '/' . basename($path_source);
+    // Уже существующие файлы перезаписываем 
+    // (ранее было - переименовать).
     if (variable_get('cml_content_image_settings', 1)) {
-      $destination = file_unmanaged_copy($path_source, $destination, FILE_EXISTS_RENAME);
+      $destination = file_unmanaged_copy($path_source, $destination, FILE_EXISTS_REPLACE);
     } else {
-      $destination = file_unmanaged_move($path_source, $destination, FILE_EXISTS_RENAME);
+      $destination = file_unmanaged_move($path_source, $destination, FILE_EXISTS_REPLACE);
     }
 
     if ($destination) {

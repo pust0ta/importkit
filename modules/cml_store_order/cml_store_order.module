@@ -175,7 +175,7 @@ function cml_store_order_create_orders($params) {
 
   // создание файла ордера
   $timechange = time();
-  $no_spaces = '<?xml version="1.0" encoding="windows-1251"?>
+  $no_spaces = '<?xml version="1.0" encoding="utf-8"?>
 	<КоммерческаяИнформация ВерсияСхемы="2.05"
 		ДатаФормирования="' . date('Y-m-d', $timechange) . 'T' . date('H:i:s', $timechange) . '"
 		ФорматДаты="ДФ=yyyy-MM-dd; ДЛФ=DT"
@@ -185,7 +185,7 @@ function cml_store_order_create_orders($params) {
 		ФорматКоличества="ЧЦ=18; ЧДЦ=2; ЧРД=.">
 	</КоммерческаяИнформация>';
 
-    $xml = @new SimpleXMLElement (importkit_convert('utf-8', 'windows-1251', $no_spaces));
+    $xml = @new SimpleXMLElement ($no_spaces);
 
     if (!is_object($xml)) {
         return; // TODO:// написать ругательство

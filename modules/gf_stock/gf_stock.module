@@ -135,10 +135,13 @@ function gf_stock_node_load($nodes, $types){
     $stock = (int) $record->stock;
     // Складываем суммы остатков в конкретном регионе для разных представлений.
     if ($record->guid2) {
-      // Мапим и пишем в объект ноды guid2 с массивом атрибутов ubercart.
-      $nodes[$record->nid]->guid2[$record->guid2] = unserialize($record->uc_combination) ;
-      // При наличии guid2 - расширяем массив региональных остатков.
-      $nodes[$record->nid]->gf_region_stock[$record->guid2][$record->region] = $stock;
+      // Раскладываем остатки, основываясь на guid2(аттрибуты в ubercart).
+      $uc_combo = unserialize($record->uc_combination);
+      // $aid - ID атрибута(ubercart), $option_id - ID опции атрибута.
+      // В новом свойстве ноды-товара родительский массив - регион.
+      foreach ($uc_combo as $aid => $option_id){
+        $nodes[$record->nid]->gf_region_stock_by_attr[$record->region][$aid][$option_id] = $stock;
+      }
     }
     // Что бы не возникало ошибок в написанных ранее(Ильей) обработчиках
     // данного массива, оставляем остаток по регионам без учета рановидностей товара.
@@ -573,4 +576,26 @@ function gf_stock_get_uc_combination($nid, $guid2) {
     ->fetchField();
 
   return (is_null($query)) ? '' : $query;
+}
+
+/**
+ * Implements hook_uc_form_alter().
+ * 
+ * Изменяем форму добавления товара в корзину для отображения
+ * остатков по каждому атрибуту(guid2), если таковые имеются.
+ */
+function gf_stock_uc_form_alter(&$form, &$form_state, $form_id) {
+  if (strpos($form_id, 'add_to_cart_form') || $form_id == 'uc_order_add_product_form') {
+    $node = &$form['node']['#value'];
+    $region = gf_stock_get_current_region();
+    if (isset($node->attributes) && isset($node->gf_region_stock_by_attr[$region])) {
+      $stock_by_attr = $node->gf_region_stock_by_attr[$region];
+      foreach ($stock_by_attr as $aid => $oids) {
+        foreach ($oids as $oid => $stock) {
+          $node->attributes[$aid]->options[$oid]->name .= t(' (stock: !stock)', 
+            ['!stock'=>$stock]);
+        }
+      }
+    }
+  }
 }

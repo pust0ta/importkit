@@ -99,13 +99,14 @@ function cml_store_order_create_orders($params) {
   /**
    * Получение информации о менеджере
    */
-  $manager_nid = node_load($account->field_manager["und"][0]["target_id"]);
-  $manager_name = $manager_nid->field_code_1c["und"][0]["safe_value"];
+  $manager_node = node_load($account->field_manager["und"][0]["target_id"]);
+  $manager_user = user_load($manager_node->field_user_link["und"][0]["target_id"]);
+  $manager_name = $manager_node->field_code_1c["und"][0]["safe_value"];
 
 
   foreach ($account->roles as $rid=>$role) {
     if ($rid != '2') {
-      if ($rid == klient_sadovod_rid or user_has_role(manager_sadovod_rid, $manager_nid)) {
+      if ($rid == klient_sadovod_rid or user_has_role(manager_sadovod_rid, $manager_user)) {
         $comments .= ' - Клиент с "Садовода"';
         $is_sadovod = TRUE;
       } else {

@@ -112,7 +112,7 @@ function gf_stock_importkit_stock($entity, $xml_element){
         'guid2' => $entity->guid2,
       ))
       ->fields($fields)
-      ->expression('stock', 'stock + :inc', array(':inc' => $element->Остаток))
+      ->expression('stock', 'stock + :inc', array(':inc' => (int) $element->Остаток))
       ->execute();
 
   }

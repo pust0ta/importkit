@@ -216,8 +216,6 @@ function importkit_product_batch_set()
         cache_set('importkit_working', time());
 
         rules_invoke_event('importkit_import_started', $jobs);
-        // Вызов хука hook_importkit_import_started()
-        module_invoke_all('importkit_import_started');
 
         return true;
 

@@ -59,26 +59,19 @@ function gf_stock_node_delete($node) {
     ->execute();
 }
 
+
 /**
- * Implements hook_importkit_import_finished().
+ * Implements hook_importkit_import_started().
  */
-function gf_stock_importkit_import_finished() {
-  // По завершении импорта удаляем переменную-флаг.
-  variable_del('gf_stock_import_started');
+function gf_stock_importkit_import_started() {
+  // При начале импорта очищаем таблицу остатков.
+  db_truncate('gf_stock_stocks')->execute();
 }
 
 /**
  * Implements hook_importkit_stock().
  */
 function gf_stock_importkit_stock($entity, $xml_element){
-  $import_started = variable_get('gf_stock_import_started', FALSE);
-
-  if (!$import_started) {
-    // Удаляем текущие данные по остаткам в начале импорта.
-    db_truncate('gf_stock_stocks')->execute();
-    variable_set('gf_stock_import_started', TRUE);
-  }
-
   // Обновляем при импорте данные по остаткам в регионах.
   foreach($xml_element->Остатки->ОстаткиСклада as $element) {
     // Запись в таблицу importkit_cml_stock оставляем на

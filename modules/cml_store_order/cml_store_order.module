@@ -99,13 +99,14 @@ function cml_store_order_create_orders($params) {
   /**
    * Получение информации о менеджере
    */
-  $manager_nid = node_load($account->field_manager["und"][0]["target_id"]);
-  $manager_name = $manager_nid->field_code_1c["und"][0]["safe_value"];
+  $manager_node = node_load($account->field_manager["und"][0]["target_id"]);
+  $manager_user = user_load($manager_node->field_user_link["und"][0]["target_id"]);
+  $manager_name = $manager_node->field_code_1c["und"][0]["safe_value"];
 
 
   foreach ($account->roles as $rid=>$role) {
     if ($rid != '2') {
-      if ($rid == klient_sadovod_rid or user_has_role(manager_sadovod_rid, $manager_nid)) {
+      if ($rid == klient_sadovod_rid or user_has_role(manager_sadovod_rid, $manager_user)) {
         $comments .= ' - Клиент с "Садовода"';
         $is_sadovod = TRUE;
       } else {
@@ -175,7 +176,7 @@ function cml_store_order_create_orders($params) {
 
   // создание файла ордера
   $timechange = time();
-  $no_spaces = '<?xml version="1.0" encoding="windows-1251"?>
+  $no_spaces = '<?xml version="1.0" encoding="utf-8"?>
 	<КоммерческаяИнформация ВерсияСхемы="2.05"
 		ДатаФормирования="' . date('Y-m-d', $timechange) . 'T' . date('H:i:s', $timechange) . '"
 		ФорматДаты="ДФ=yyyy-MM-dd; ДЛФ=DT"
@@ -185,7 +186,7 @@ function cml_store_order_create_orders($params) {
 		ФорматКоличества="ЧЦ=18; ЧДЦ=2; ЧРД=.">
 	</КоммерческаяИнформация>';
 
-    $xml = @new SimpleXMLElement (importkit_convert('utf-8', 'windows-1251', $no_spaces));
+    $xml = @new SimpleXMLElement ($no_spaces);
 
     if (!is_object($xml)) {
         return; // TODO:// написать ругательство

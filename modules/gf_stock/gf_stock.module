@@ -95,6 +95,7 @@ function gf_stock_importkit_stock($entity, $xml_element){
     //   'region' => (string) $element->Регион,
     // ))->execute();
 
+    if (!in_array($element->Регион, [GF_STOCK_REGION_RU, GF_STOCK_REGION_CN])) continue;
     // Запись непосредственно в таблицу, которая будет
     // использоваться в дальнейшем для отображения остатков по регионам.
     $fields = [];

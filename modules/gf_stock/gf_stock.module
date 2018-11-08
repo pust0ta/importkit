@@ -59,26 +59,25 @@ function gf_stock_node_delete($node) {
     ->execute();
 }
 
+
 /**
  * Implements hook_importkit_import_finished().
  */
 function gf_stock_importkit_import_finished() {
-  // По завершении импорта удаляем переменную-флаг.
-  variable_del('gf_stock_import_started');
+    variable_del('gf_stock_importkit_started');
 }
+
 
 /**
  * Implements hook_importkit_stock().
  */
 function gf_stock_importkit_stock($entity, $xml_element){
-  $import_started = variable_get('gf_stock_import_started', FALSE);
-
-  if (!$import_started) {
-    // Удаляем текущие данные по остаткам в начале импорта.
+  $import_started_flag = variable_get('gf_stock_importkit_started', FALSE);
+  if (!$import_started_flag) {
+    // При начале импорта очищаем таблицу остатков.
     db_truncate('gf_stock_stocks')->execute();
-    variable_set('gf_stock_import_started', TRUE);
+    variable_set('gf_stock_importkit_started', TRUE);
   }
-
   // Обновляем при импорте данные по остаткам в регионах.
   foreach($xml_element->Остатки->ОстаткиСклада as $element) {
     // Запись в таблицу importkit_cml_stock оставляем на
@@ -95,6 +94,7 @@ function gf_stock_importkit_stock($entity, $xml_element){
     //   'region' => (string) $element->Регион,
     // ))->execute();
 
+    if (!in_array($element->Регион, [GF_STOCK_REGION_RU, GF_STOCK_REGION_CN])) continue;
     // Запись непосредственно в таблицу, которая будет
     // использоваться в дальнейшем для отображения остатков по регионам.
     $fields = [];
@@ -112,7 +112,7 @@ function gf_stock_importkit_stock($entity, $xml_element){
         'guid2' => $entity->guid2,
       ))
       ->fields($fields)
-      ->expression('stock', 'stock + :inc', array(':inc' => $element->Остаток))
+      ->expression('stock', 'stock + :inc', array(':inc' => (int) $element->Остаток))
       ->execute();
 
   }

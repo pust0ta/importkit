@@ -55,6 +55,8 @@ function cml_store_order_create_orders($params) {
   $is_org = FALSE;
   $is_personal = FALSE;
 
+  $payment_method = $order->payment_method;
+
   if (strlen($inn) <= 11) {
     $is_org = TRUE;
   } elseif (strlen($inn) > 11) {

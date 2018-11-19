@@ -162,10 +162,14 @@ function gf_stock_node_load($nodes, $types){
     ->fetchAllAssoc('price_id');
 
   $price_map = _gf_stock_get_region_price_map();
+
   foreach ($prices as $price_id=>$price) {
     $price_value = _gf_stock_convert_to_default_currency((double) $price->price, 
         $price->currency);
-    $nodes[$prices[$price_id]->nid]->gf_region_prices[$price_map[$price_id]] = $price_value;
+    if (isset($price_map[$price_id])) {
+      $nodes[$prices[$price_id]->nid]->gf_region_prices[$price_map[$price_id]] = $price_value;
+      $nodes[$prices[$price_id]->nid]->gf_region_prices_original[drupal_strtolower($price->currency)] = (double) $price->price;
+    }
   }
 }
 
@@ -363,6 +367,7 @@ $form['gf_stock_region_prices'] = array(
   '#type' => 'fieldset',
   '#title' => t('Prices by region'),
 );
+
 $options = [];
 $options[GF_STOCK_REGION_ALL] = t('All');
 

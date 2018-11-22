@@ -55,8 +55,6 @@ function cml_store_order_create_orders($params) {
   $is_org = FALSE;
   $is_personal = FALSE;
 
-  $payment_method = $order->payment_method;
-
   if (strlen($inn) <= 11) {
     $is_org = TRUE;
   } elseif (strlen($inn) > 11) {
@@ -119,6 +117,21 @@ function cml_store_order_create_orders($params) {
   if ($cargo_company) {
     $comments .= '. ТК:' . $cargo_company;
   }
+
+  $payment_method = $order->payment_method;
+  if ($payment_method) {
+    if ($payment_method == 'other') {
+      $payment_method = 'Отсрочка платежа';
+    } elseif ($payment_method == 'cod') {
+      $payment_method = 'Наличными';
+    } elseif ($payment_method == 'check') {
+      $payment_method = 'Безналичная оплата';
+    } elseif ($payment_method == 'uc_payment_method_free_order') {
+      $payment_method = 'Наличными в кассу';
+    }
+    $comments .= ' - ' . $payment_method;
+  }
+
   if ($manager_name) {
     $comments .= '. Менеджер:' . $manager_name;
   }
@@ -313,7 +326,7 @@ function cml_store_order_create_orders($params) {
 
     // Статус платежа
     if ($payment_method) {
-        $t2 = $t1->addChild('ЗначениеРеквизита');
+      $t2 = $t1->addChild('ЗначениеРеквизита');
         $t2->addChild('Наименование', 'Дата оплаты');
         $t2->addChild('Значение', date('Y-m-d h:i:s', $payment_received)); //2011-09-04 07:32:15
 

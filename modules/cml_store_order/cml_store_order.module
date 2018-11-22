@@ -94,7 +94,20 @@ function cml_store_order_create_orders($params) {
   }
 
   //Регион со складов которого осуществлён заказ
-  $current_region = $order->products[1]->data["region_stock"];
+  $shipping_exists = FALSE;
+  if ($order->line_items && is_array($order->line_items) && count($order->line_items)) {
+    foreach ($order->line_items as $line_item) {
+      if ($line_item['type'] == 'shipping') {
+        $shipping_exists = TRUE;
+        break;
+      }
+    }
+  }
+  if ($shipping_exists) {
+    $current_region = $order->products[1]->data["region_stock"];
+  } else {
+    $current_region = $order->products[0]->data["region_stock"];
+  }
 
   /**
    * Получение информации о менеджере

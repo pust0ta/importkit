@@ -42,8 +42,8 @@ function cml_store_order_create_orders($params) {
   $reg_postal_code = $account->field_pocht_indeks["und"][0]["safe_value"];
   $cargo_company = $order->uc_addresses['shipping']->getField('ucxf_cargo_company');
 
-  $inn = $account->field_vat_id["und"][0]["safe_value"];
-  $ogrn = $account->field_ogrn["und"][0]["safe_value"];
+  $inn = $account->field_vat_id["und"][0]["safe_value"] ?? '';
+  $ogrn = $account->field_ogrn["und"][0]["safe_value"] ?? '';
   $kpp = $account->field_kpp["und"][0]["safe_value"];
   $bank_name = $account->field_bank_name["und"][0]["safe_value"];
   $bank_account = $account->field_bank_account_number["und"][0]["safe_value"];

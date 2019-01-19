@@ -19,9 +19,9 @@ function _gf_stock_convert_to_default_currency($sum, $sum_currency){
     $exchange_rate = variable_get('gf_stock_yuan_exchange_rate');
     switch ($default_currency) {
     case GF_STOCK_CURRENCY_CN:
-     return ($sum / $exchange_rate);
+      return ($sum / $exchange_rate);
     case GF_STOCK_CURRENCY_RU:
-     return ($sum * $exchange_rate);
+      return ($sum * $exchange_rate);
     }
   }
   return $sum;
@@ -64,7 +64,7 @@ function gf_stock_node_delete($node) {
  * Implements hook_importkit_import_finished().
  */
 function gf_stock_importkit_import_finished() {
-    variable_del('gf_stock_importkit_started');
+  variable_del('gf_stock_importkit_started');
 }
 
 
@@ -164,11 +164,35 @@ function gf_stock_node_load($nodes, $types){
   $price_map = _gf_stock_get_region_price_map();
 
   foreach ($prices as $price_id=>$price) {
-    $price_value = _gf_stock_convert_to_default_currency((double) $price->price, 
-        $price->currency);
     if (isset($price_map[$price_id])) {
-      $nodes[$prices[$price_id]->nid]->gf_region_prices[$price_map[$price_id]] = $price_value;
-      $nodes[$prices[$price_id]->nid]->gf_region_prices_original[drupal_strtolower($price->currency)] = (double) $price->price;
+      $price_value = $price->price;
+      if (!isset($nodes[$prices[$price_id]->nid]->gf_region_stock[$price_map[$price_id]])) {
+        // Проверяем наличие товара. Если в массиве остатков для текущего
+        // региона нет нужного значения, тогда создаем его со значением остатков - 0.
+        $nodes[$prices[$price_id]->nid]->gf_region_stock[$price_map[$price_id]] = 0;
+        // Соответственно региональная цена тоже - ноль.
+        $price_value = 0;
+      }
+      elseif ($price_map[$price_id] == GF_STOCK_REGION_CN) {
+        // Если текущий регион Китай - совершаем некоторые манипуляции с его ценой.
+        $cn_to_rub = variable_get('gf_stock_region_price_cny_as_rub', FALSE);
+
+        if (drupal_strtolower($price->currency) != drupal_strtolower(GF_STOCK_CURRENCY_CN)) {
+          // Проверяем, что текущая валюта пришла в юанях. Если
+          // это не так, тогда задаем нулевую цену(из 1С цены пришли с ошибками).
+          $price_value = 0;
+        }
+        elseif ($cn_to_rub) {
+          // Если в настройках модуля есть указание конвертировать
+          // юани в рубли для китайского склада - делаем.
+          $price_value *= variable_get('gf_stock_yuan_exchange_rate', 1);
+          // $price_value = _gf_stock_convert_to_default_currency((double) $price->price, 
+            // $price->currency);
+        }
+      }
+
+      $nodes[$prices[$price_id]->nid]->gf_region_prices[$price_map[$price_id]] = round($price_value);
+      $nodes[$prices[$price_id]->nid]->gf_region_prices_original[drupal_strtolower($price->currency)] = round($price->price);
     }
   }
 }
@@ -208,6 +232,7 @@ function gf_stock_menu() {
     'page callback' => 'drupal_get_form',
     'page arguments' => ['gf_stock_settings'],
     'type' => MENU_LOCAL_TASK,
+    'file' => 'gf_stock.admin.inc',
     'weight' => 2,
   );
   return $items;
@@ -328,86 +353,6 @@ function gf_stock_theme($existing, $type, $theme, $path) {
 
 
 /**
- * Форма наcтроек модуля.
- */
-function gf_stock_settings() {
-  $rate_array = array(variable_get('gf_stock_yuan_exchange_rate', NULL), 
-  variable_get('gf_stock_yuan_rate_last_update', NULL));
-  if(in_array(NULL, $rate_array)) {
-    gf_stock_update_yuan_exchange_rate(); 
-  }
-
-  $form['gf_stock_currency'] = array(
-    '#type' => 'fieldset',
-    '#title' => t('Basic Currency Settings')
-  );
-  // Информация о текущем курсе юаня к рублю.
-  $form['gf_stock_currency']['gf_stock_current_yuan_exchange_rate'] = array(
-    '#markup' => t('The current exchange rate of the yuan to the 
-    ruble is @rate rubles per 1 yuan. Date of last update: @date',
-array(
-  '@rate' => variable_get('gf_stock_yuan_exchange_rate'),
-  '@date' => variable_get('gf_stock_yuan_rate_last_update')
-)),
-  );
-
-// Выбор валюты по-умолчанию.
-$form['gf_stock_currency']['gf_stock_region_price_currency'] = array(
-  '#type' => 'select',
-  '#title' => t('Default currency'),
-  '#description' => t('The currency in which the imported prices will be stored.'),
-  '#options' => array(
-    GF_STOCK_CURRENCY_CN => t('Yuan'),
-    GF_STOCK_CURRENCY_RU => t('Ruble')
-  ),
-  '#default_value' => variable_get('gf_stock_region_price_currency', GF_STOCK_CURRENCY_CN),
-);
-
-$form['gf_stock_region_prices'] = array(
-  '#type' => 'fieldset',
-  '#title' => t('Prices by region'),
-);
-
-$options = [];
-$options[GF_STOCK_REGION_ALL] = t('All');
-
-// Получаем список ID для цен регионов.
-$query_region_ids = db_select('gf_stock_prices', 'p')
-  ->fields('p', array('price_id', 'currency'))
-  ->distinct('p.price_id' )
-  ->execute()
-  ->fetchAll();
-
-foreach($query_region_ids as $name=>$region_id) {
-  $region_ids[$region_id->price_id] = $region_id->price_id;
-}
-
-foreach(gf_stock_get_regions() as $name => $region){
-  $options[$name] = $region;
-  // Привязки имеющихся ID цен регионов к конкретным регионам.
-  $form['gf_stock_region_prices']['gf_stock_region_price_'. $name] = array(
-    '#type' => 'select',
-    '#title' => t('Price ID for Region @region', array('@region' => drupal_strtoupper($name))),
-    '#description' => t('The stock region that will be selected if the user did`t select their region.'),
-    '#options' => $region_ids,
-    '#default_value' => variable_get('gf_stock_region_price_' . $name),
-  );
-}
-
-// Регион по-умолчанию. Когда пол-ль не выбирал никаких регионов.
-$form['gf_stock_default_region'] = array(
-  '#type' => 'select',
-  '#title' => t('Default Region'),
-  '#description' => t('The stock region that will be selected if the user did`t select their region.'),
-  '#options' => $options,
-  '#default_value' => variable_get('gf_stock_default_region', GF_STOCK_REGION_ALL),
-  '#weight' => -1,
-);
-return system_settings_form($form);
-}
-
-
-/**
  * Implements hook_views_api().
  */
 function gf_stock_views_api() {
@@ -522,7 +467,7 @@ function gf_stock_cron() {
     }
   }
 }
-*/
+ */
 
 /**
  * Implements hook_uc_add_to_cart_data().
